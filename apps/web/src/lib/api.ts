@@ -1,4 +1,4 @@
-import type { City, HotspotCollection, HotspotDetail, Turno } from "../types";
+import type { ArmedViolenceCollection, City, HotspotCollection, HotspotDetail, Turno } from "../types";
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -18,4 +18,8 @@ export function fetchHotspots(city: string, day: number, turno: Turno): Promise<
 
 export function fetchHotspotDetail(id: number, day: number, turno: Turno): Promise<HotspotDetail> {
   return getJSON(`/api/hotspots/${id}?day=${day}&turno=${turno}`);
+}
+
+export function fetchArmedViolence(city: string, days = 180): Promise<ArmedViolenceCollection> {
+  return getJSON(`/api/armed-violence?city=${city}&days=${days}`);
 }

@@ -21,6 +21,7 @@ Documentação completa de decisões, dados e roadmap: **[`specs/`](specs/README
 - Pontos piscando com tamanho/cor proporcional à intensidade de risco
 - Drill-down por clique: probabilidade de roubo/furto separadas + nota de metodologia específica da cidade
 - Fórmula 100% baseada em agregados reais (SEGUP-PA pra Belém, ISP-RJ pro Rio — nunca números inventados)
+- Camada opcional de **violência armada** (Belém): 839 tiroteios reais desde nov/2023, dado do Instituto Fogo Cruzado, mostrados como eventos pontuais — fenômeno diferente de roubo/furto, camada separada, desligada por padrão
 
 ## Rodando local
 
@@ -41,6 +42,10 @@ cp apps/web/.env.example apps/web/.env
 
 npm run dev:api           # http://localhost:4000
 npm run dev:web           # http://localhost:5173
+
+# opcional, camada de violência armada (Belém):
+# cp .env.example .env  →  preencher com conta criada em fogocruzado.org.br
+npm run db:fetch-armed-violence
 ```
 
 `docker-compose.yml` existe no repo como via alternativa (Postgres+PostGIS em container) mas não é o caminho testado nesta máquina — ver notas de ambiente.

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import MapView from "./components/MapView";
 import TimeControl from "./components/TimeControl";
 import HotspotDetail from "./components/HotspotDetail";
+import ArmedViolenceDetail from "./components/ArmedViolenceDetail";
 import { fetchCities } from "./lib/api";
-import type { City, Turno } from "./types";
+import type { ArmedViolenceFeature, City, Turno } from "./types";
 
 function turnoFromHour(hour: number): Turno {
   if (hour < 6) return "madrugada";
@@ -19,6 +20,9 @@ export default function App() {
   const [turno, setTurno] = useState<Turno>(() => turnoFromHour(new Date().getHours()));
   const [autoMode, setAutoMode] = useState(true);
   const [selectedHotspotId, setSelectedHotspotId] = useState<number | null>(null);
+  const [showArmedViolence, setShowArmedViolence] = useState(false);
+  const [armedViolenceCount, setArmedViolenceCount] = useState<number | null>(null);
+  const [selectedViolenceEvent, setSelectedViolenceEvent] = useState<ArmedViolenceFeature | null>(null);
 
   useEffect(() => {
     fetchCities().then((list) => {
@@ -33,6 +37,8 @@ export default function App() {
       if (next) {
         setCity(next);
         setSelectedHotspotId(null);
+        setSelectedViolenceEvent(null);
+        setArmedViolenceCount(null);
       }
     },
     [cities]
@@ -50,7 +56,20 @@ export default function App() {
     return () => clearInterval(interval);
   }, [autoMode]);
 
-  const onSelectHotspot = useCallback((id: number) => setSelectedHotspotId(id), []);
+  const onSelectHotspot = useCallback((id: number) => {
+    setSelectedHotspotId(id);
+    setSelectedViolenceEvent(null);
+  }, []);
+
+  const onSelectViolenceEvent = useCallback((event: ArmedViolenceFeature) => {
+    setSelectedViolenceEvent(event);
+    setSelectedHotspotId(null);
+  }, []);
+
+  const onToggleArmedViolence = useCallback(() => {
+    setShowArmedViolence((v) => !v);
+    setArmedViolenceCount(null);
+  }, []);
 
   if (!city) {
     return <div className="h-full w-full flex items-center justify-center text-slate-400">Carregando Ronda…</div>;
@@ -58,17 +77,28 @@ export default function App() {
 
   return (
     <div className="relative h-full w-full overflow-hidden">
-      <MapView city={city} day={day} turno={turno} onSelectHotspot={onSelectHotspot} />
+      <MapView
+        city={city}
+        day={day}
+        turno={turno}
+        showArmedViolence={showArmedViolence}
+        onSelectHotspot={onSelectHotspot}
+        onSelectViolenceEvent={onSelectViolenceEvent}
+        onArmedViolenceCount={setArmedViolenceCount}
+      />
       <TimeControl
         cities={cities}
         city={city}
         day={day}
         turno={turno}
         autoMode={autoMode}
+        showArmedViolence={showArmedViolence}
+        armedViolenceCount={armedViolenceCount}
         onChangeCity={onChangeCity}
         onChangeDay={setDay}
         onChangeTurno={setTurno}
         onToggleAuto={() => setAutoMode((v) => !v)}
+        onToggleArmedViolence={onToggleArmedViolence}
       />
       {selectedHotspotId !== null && (
         <HotspotDetail
@@ -77,6 +107,9 @@ export default function App() {
           turno={turno}
           onClose={() => setSelectedHotspotId(null)}
         />
+      )}
+      {selectedViolenceEvent !== null && (
+        <ArmedViolenceDetail event={selectedViolenceEvent} onClose={() => setSelectedViolenceEvent(null)} />
       )}
     </div>
   );

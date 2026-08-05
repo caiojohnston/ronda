@@ -48,3 +48,15 @@ html, body, #root {
   border-radius: 9999px;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
 }
+
+/* Camada de violência armada: visual deliberadamente diferente dos pontos de risco
+   (sem pulso, formato de losango) — são eventos pontuais já ocorridos, não estimativa. */
+.violence-marker {
+  width: 14px;
+  height: 14px;
+  transform: rotate(45deg);
+  background: #f59e0b;
+  border: 2px solid #fef3c7;
+  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+}

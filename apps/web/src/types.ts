@@ -39,3 +39,25 @@ export interface HotspotDetail extends HotspotProperties {
   methodology: string;
   temporal_data: boolean;
 }
+
+export interface ArmedViolenceProperties {
+  id: number;
+  occurred_at: string;
+  neighborhood: string | null;
+  address: string | null;
+  main_reason: string | null;
+  victim_count: number;
+  death_count: number;
+}
+
+export interface ArmedViolenceFeature {
+  type: "Feature";
+  geometry: { type: "Point"; coordinates: [number, number] };
+  properties: ArmedViolenceProperties;
+}
+
+export interface ArmedViolenceCollection {
+  type: "FeatureCollection";
+  features: ArmedViolenceFeature[];
+  meta: { city: string; window_days: number; methodology: string; source: string };
+}

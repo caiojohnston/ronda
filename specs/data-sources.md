@@ -35,18 +35,20 @@ Números capturados (Pará, agregado, todos os municípios):
 - Dia da semana: seg 15.5%, sex 14.63%, qua 14.54%, ter 14.36%, qui 14.13%, dom 13.75%, sáb 13.03%
 - Crime: roubo 53.85%, furto 46.15% (Belém: roubo 661.765 / furto 567.071)
 
-## Confirmado funcionando, aguardando ação do usuário (cadastro)
+## Funcionando, usado no v0 (continuação)
 
 ### Instituto Fogo Cruzado — violência armada (tiroteios), não roubo/furto
 
-Achado em 2026-08-05 buscando alternativa pra dado street-level de Belém depois que CODEC/SEGUP-PA caíram e scraping de imprensa local esbarrou em bot-detection (ver seção de tentativas sem sucesso abaixo). **Maior banco de dados aberto de violência armada da América Latina**, ONG estabelecida, dado citado por imprensa/academia — não é scraping nosso, é a agregação verificada deles.
+Achado em 2026-08-05 buscando alternativa pra dado street-level de Belém depois que CODEC/SEGUP-PA caíram e scraping de imprensa local esbarrou em bot-detection (ver seção de tentativas sem sucesso abaixo). **Maior banco de dados aberto de violência armada da América Latina**, ONG estabelecida, dado citado por imprensa/academia — não é scraping nosso, é a agregação verificada deles. Integrado no mesmo dia, depois do usuário criar conta e passar a chave.
 
-- API: `api.fogocruzado.org.br` (docs em `api.fogocruzado.org.br/docs`)
-- **Cobre a Região Metropolitana de Belém desde novembro/2023** (também RJ desde 2016, Recife desde 2018, Bahia desde 2022)
-- Endpoint `occurrences` retorna, por registro real: `latitude`, `longitude`, `address`, `date`, `state`, `city`, `neighborhood`, `subNeighborhood`, `mainReason`, dados de vítima (idade, gênero, raça, se é agente/civil) — filtrável por `idCities` e intervalo de data (`initialdate`/`finaldate`)
-- **Mede coisa diferente de SEGUP-PA/ISP-RJ**: tiroteio/disparo de arma de fogo, não roubo/furto patrimonial. Se entrar no produto, precisa ser camada/metodologia separada — categorias de crime diferentes, não dá pra somar ou misturar no índice de risco atual.
-- **Exige cadastro** (email/senha → JWT via `/docs/auth`) pra pegar chave de API. Criar conta em serviço de terceiro é ação do usuário, não do agente (regra de segurança fixa) — usuário vai cadastrar em `fogocruzado.org.br` e passar a chave.
-- Próximo passo assim que a chave chegar: desenhar schema novo pra essa camada (provavelmente tabela `armed_violence_events` — evento pontual, não probabilidade agregada, então não reaproveita `incident_patterns` como está), endpoint de API novo, camada visual distinta no mapa (ícone/cor diferente da pulsação de risco atual, pra não confundir as duas fontes/fenômenos).
+- **Host real da API é `api-service.fogocruzado.org.br`**, não `api.fogocruzado.org.br` (esse é só o site de documentação — `api.fogocruzado.org.br/docs` mostra os exemplos, mas as chamadas de verdade vão pro `api-service`)
+- Login: `POST /api/v2/auth/login` com `{email, password}` → `{data: {accessToken, expiresIn: 3600}}` (JWT, válido 1h, sem refresh automático — script atual só faz um login e roda até terminar, não precisa renovar pro volume atual)
+- Cidades: `GET /api/v2/cities?take=500` → lista com `{id, name, state: {id, name}}`. Belém: `id=b5fb1bfa-8d75-4e41-a3e6-84392b5410f7`, estado Pará `id=2a98a020-3815-45d7-a6f6-6de2119eba8b` (não hardcoded no script — ele busca pelo nome "Belém" toda vez, mais robusto que fixar o UUID)
+- Ocorrências: `GET /api/v2/occurrences?idState=...&idCities=...&take=100&page=N` — **`idState` é obrigatório**, não documentado como tal no `/docs` (erro só aparece em runtime: `"idState should not be empty"`). `take` máximo testado: 100. Resposta paginada via `pageMeta.hasNextPage`.
+- **Belém: 839 ocorrências desde novembro/2023** (confirmado via API em 2026-08-05), ritmo de ~20/mês, 120 nos últimos 180 dias — volume viável pra mostrar como pontos individuais no mapa sem clustering, ao contrário do que seria mostrar tudo de uma vez.
+- Campos usados: `latitude`, `longitude`, `date`, `neighborhood.name`, `address`, `contextInfo.mainReason.name`, `victims[]` (contamos `victims.length` como `victim_count` e `victims.filter(v => v.situation === 'Dead').length` como `death_count`)
+- **Cobre RJ, Recife e Bahia também**, além de Belém — dá pra estender a mesma camada pro Rio rodando `fetch-fogo-cruzado.js` com a cidade certa (script hoje hardcoded pra `CITY_NAME_FC = "Belém"`), não feito ainda.
+- Credenciais em `.env` (gitignored) — cadastro é ação do usuário (regra de segurança do agente: nunca criar conta em serviço de terceiro). **Pegadinha real encontrada:** senha continha `#`, que o parser `--env-file` nativo do Node trata como início de comentário fora de aspas — truncou a senha silenciosamente (`8#bKu1T;...` virou só `8`), causando 401 até perceber e colocar a senha entre aspas duplas no `.env`.
 
 ## Tentativas sem sucesso nesta sessão (2026-08-05)
 

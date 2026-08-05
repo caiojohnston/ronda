@@ -2,12 +2,14 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import citiesRoutes from "./routes/cities.js";
 import hotspotsRoutes from "./routes/hotspots.js";
+import armedViolenceRoutes from "./routes/armed-violence.js";
 
 const app = Fastify({ logger: true });
 
 await app.register(cors, { origin: process.env.CORS_ORIGIN || "http://localhost:5173" });
 await app.register(citiesRoutes);
 await app.register(hotspotsRoutes);
+await app.register(armedViolenceRoutes);
 
 app.get("/health", async () => ({ ok: true }));
 

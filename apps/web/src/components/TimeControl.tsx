@@ -7,10 +7,13 @@ interface Props {
   day: number;
   turno: Turno;
   autoMode: boolean;
+  showArmedViolence: boolean;
+  armedViolenceCount: number | null;
   onChangeCity: (slug: string) => void;
   onChangeDay: (day: number) => void;
   onChangeTurno: (turno: Turno) => void;
   onToggleAuto: () => void;
+  onToggleArmedViolence: () => void;
 }
 
 const TURNOS: Turno[] = ["madrugada", "manha", "tarde", "noite"];
@@ -21,10 +24,13 @@ export default function TimeControl({
   day,
   turno,
   autoMode,
+  showArmedViolence,
+  armedViolenceCount,
   onChangeCity,
   onChangeDay,
   onChangeTurno,
   onToggleAuto,
+  onToggleArmedViolence,
 }: Props) {
   const hasTemporalData = city.has_temporal_data;
   const controlsDisabled = autoMode || !hasTemporalData;
@@ -99,6 +105,29 @@ export default function TimeControl({
           baseado no total de ocorrências de 2025 por delegacia.
         </p>
       )}
+
+      <div className="border-t border-slate-700 mt-3 pt-3">
+        <button
+          onClick={onToggleArmedViolence}
+          className={`w-full flex items-center justify-between text-xs px-2 py-1.5 rounded border ${
+            showArmedViolence
+              ? "bg-amber-500/20 border-amber-400 text-amber-300"
+              : "bg-slate-800 border-slate-600 text-slate-300"
+          }`}
+        >
+          <span>◆ Violência armada (Fogo Cruzado)</span>
+          <span>{showArmedViolence ? "ligado" : "desligado"}</span>
+        </button>
+        {showArmedViolence && (
+          <p className="text-[11px] text-slate-400 mt-2 leading-snug">
+            {armedViolenceCount === null
+              ? "Carregando…"
+              : armedViolenceCount === 0
+                ? `Sem eventos registrados em ${city.name} nos últimos 6 meses (ou fonte ainda não cobre esta cidade).`
+                : `${armedViolenceCount} evento(s) nos últimos 6 meses. Fenômeno diferente do índice de roubo/furto acima — ocorrências específicas já registradas, não estimativa.`}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

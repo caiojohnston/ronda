@@ -36,3 +36,24 @@ CREATE TABLE IF NOT EXISTS incident_patterns (
 );
 
 CREATE INDEX IF NOT EXISTS incident_patterns_lookup_idx ON incident_patterns (hotspot_id, day_of_week, turno);
+
+-- Eventos pontuais de violência armada (tiroteios), fonte: Instituto Fogo Cruzado.
+-- Fenômeno diferente de roubo/furto (incident_patterns) — não é probabilidade agregada,
+-- é ocorrência individual real, por isso tabela própria em vez de reaproveitar
+-- incident_patterns. Ver specs/methodology.md.
+CREATE TABLE IF NOT EXISTS armed_violence_events (
+  id SERIAL PRIMARY KEY,
+  city_id INT NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  external_id UUID UNIQUE NOT NULL,
+  occurred_at TIMESTAMPTZ NOT NULL,
+  lat DOUBLE PRECISION NOT NULL,
+  lng DOUBLE PRECISION NOT NULL,
+  neighborhood TEXT,
+  address TEXT,
+  main_reason TEXT,
+  victim_count INT NOT NULL DEFAULT 0,
+  death_count INT NOT NULL DEFAULT 0,
+  source TEXT NOT NULL DEFAULT 'fogo_cruzado'
+);
+
+CREATE INDEX IF NOT EXISTS armed_violence_events_city_idx ON armed_violence_events (city_id, occurred_at);
