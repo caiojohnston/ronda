@@ -23,7 +23,7 @@ Levantamento feito em 2026-08-04/05. Status pode mudar — revalidar antes de as
 ### SEGUP-PA — Portal da Transparência (Power BI)
 
 - Portal: `sistemas.segup.pa.gov.br/transparencia/` → menu → Estatísticas → Dashboard
-- Embed real: Power BI público em `app.powerbi.com/view?r=...` (URL completa em `db/seed.js`, comentário no topo)
+- Embed real: Power BI público em `app.powerbi.com/view?r=...`. **Nota 2026-08-05:** a doc antiga dizia que a URL completa estava salva em `db/seed.js` — na prática não está (só o comentário com os números finais, sem a URL do embed). `sistemas.segup.pa.gov.br` inteiro está fora do ar agora (ver seção de tentativas abaixo), então não deu pra recapturar a URL nesta sessão. Se for reabrir essa fonte, precisa renavegar o portal do zero.
 - Páginas relevantes: "ROUBO - FURTO" e "OCORRÊNCIAS" (turno + dia da semana)
 - Dados confirmados, atualizados (dashboard mostrava atualização do dia anterior no momento do teste)
 - Filtrável por município — Belém isolável clicando na tabela "Municípios"
@@ -34,6 +34,27 @@ Números capturados (Pará, agregado, todos os municípios):
 - Turno: manhã 32.03%, tarde 29.89%, noite 27.32%, madrugada 10.76%
 - Dia da semana: seg 15.5%, sex 14.63%, qua 14.54%, ter 14.36%, qui 14.13%, dom 13.75%, sáb 13.03%
 - Crime: roubo 53.85%, furto 46.15% (Belém: roubo 661.765 / furto 567.071)
+
+## Confirmado funcionando, aguardando ação do usuário (cadastro)
+
+### Instituto Fogo Cruzado — violência armada (tiroteios), não roubo/furto
+
+Achado em 2026-08-05 buscando alternativa pra dado street-level de Belém depois que CODEC/SEGUP-PA caíram e scraping de imprensa local esbarrou em bot-detection (ver seção de tentativas sem sucesso abaixo). **Maior banco de dados aberto de violência armada da América Latina**, ONG estabelecida, dado citado por imprensa/academia — não é scraping nosso, é a agregação verificada deles.
+
+- API: `api.fogocruzado.org.br` (docs em `api.fogocruzado.org.br/docs`)
+- **Cobre a Região Metropolitana de Belém desde novembro/2023** (também RJ desde 2016, Recife desde 2018, Bahia desde 2022)
+- Endpoint `occurrences` retorna, por registro real: `latitude`, `longitude`, `address`, `date`, `state`, `city`, `neighborhood`, `subNeighborhood`, `mainReason`, dados de vítima (idade, gênero, raça, se é agente/civil) — filtrável por `idCities` e intervalo de data (`initialdate`/`finaldate`)
+- **Mede coisa diferente de SEGUP-PA/ISP-RJ**: tiroteio/disparo de arma de fogo, não roubo/furto patrimonial. Se entrar no produto, precisa ser camada/metodologia separada — categorias de crime diferentes, não dá pra somar ou misturar no índice de risco atual.
+- **Exige cadastro** (email/senha → JWT via `/docs/auth`) pra pegar chave de API. Criar conta em serviço de terceiro é ação do usuário, não do agente (regra de segurança fixa) — usuário vai cadastrar em `fogocruzado.org.br` e passar a chave.
+- Próximo passo assim que a chave chegar: desenhar schema novo pra essa camada (provavelmente tabela `armed_violence_events` — evento pontual, não probabilidade agregada, então não reaproveita `incident_patterns` como está), endpoint de API novo, camada visual distinta no mapa (ícone/cor diferente da pulsação de risco atual, pra não confundir as duas fontes/fenômenos).
+
+## Tentativas sem sucesso nesta sessão (2026-08-05)
+
+- **`sistemas.segup.pa.gov.br`** (dashboard + CODEC) — domínio inteiro fora do ar (`ECONNREFUSED`), não só o CODEC que já sabíamos que estava 500. Domínio raiz `segup.pa.gov.br` responde normal — parece instabilidade pontual do subdomínio, revisitar.
+- **Geoportal do MPPA** (esperava achar algo tipo `geo.mprj.mp.br`, que resolveu as coordenadas do RJ) — `geo.mppa.mp.br` não existe. MPPA tem, sim, um canal formal: Centro de Apoio Operacional Criminal, BI próprio com dado por município, contato `caocriminal@mppa.mp.br` — não explorado ainda, é pedido formal como o LAI.
+- **Scraping Diário do Pará** (`diariodopara.com.br/policia/`) — `robots.txt` bloqueia explicitamente `ClaudeBot`/`anthropic-ai` (`Disallow: /`). Não contornado, por princípio — o site declarou que não quer bots da Anthropic.
+- **Scraping O Liberal** (`oliberal.com/policia/`) — `robots.txt` não bloqueia, mas a seção retorna **HTTP 403 com desafio reCAPTCHA ativo** (proteção GoCache). Contornar CAPTCHA é ação que não faço por princípio, independente do que o robots.txt permite. Via morta pra automação.
+- **TJPA** (consulta processual) — sem caminho de acesso em massa; consulta é caso a caso, e processos de inquérito costumam ser sigilosos. Não é fonte viável pra volume.
 
 ## Fora do ar durante o levantamento (revalidar)
 
@@ -54,7 +75,7 @@ Números capturados (Pará, agregado, todos os municípios):
 ### CODEC (SEGUP-PA)
 
 - `codec.segup.pa.gov.br` — link "Exportar Dados" do portal de transparência aponta pra cá
-- Retornou **HTTP 500** durante o teste
+- Estava com **HTTP 500** em 2026-08-04; em 2026-08-05 o subdomínio inteiro (`sistemas.segup.pa.gov.br`) estava com `ECONNREFUSED` — não dá pra saber se é o mesmo problema piorando ou uma manutenção separada
 - **Provável caminho real pra dado em nível de logradouro/bairro** — vale revisitar periodicamente
 
 ## Não obtido — requer ação formal
