@@ -8,6 +8,7 @@
 - [methodology.md](methodology.md) — fórmula exata do índice de risco, números reais usados
 - [environment-notes.md](environment-notes.md) — pegadinhas de ambiente (Docker/WSL, PostGIS, UAC) nesta máquina
 - [roadmap.md](roadmap.md) — próximos passos priorizados
+- [deploy.md](deploy.md) — plano de deploy (Vercel + host externo pra API/DB), ainda não executado
 
 ## Estado no fim da sessão v0
 

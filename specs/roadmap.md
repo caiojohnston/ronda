@@ -27,7 +27,7 @@ Ordenado por prioridade sugerida, não por data.
 - Reintroduzir PostGIS quando houver necessidade real de busca por raio (ver [environment-notes.md](environment-notes.md))
 - Testes automatizados (hoje zero — v0 foi validado manualmente via browser + scripts de verificação ad-hoc)
 - CI básico (typecheck ao menos, já que `tsc --noEmit` está limpo nos dois apps)
-- Deploy: ainda não decidido onde hospedar (API + Postgres + frontend estático)
+- Deploy: plano escrito em [deploy.md](deploy.md) (frontend na Vercel, API+Postgres em Railway/Render — ainda não executado, falta escolher host da API/DB e rodar)
 
 ## Não fazer ainda (conscientemente adiado)
 
