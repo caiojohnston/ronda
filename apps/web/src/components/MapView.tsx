@@ -31,6 +31,11 @@ export default function MapView({ city, day, turno, onSelectHotspot }: Props) {
   }, [city]);
 
   useEffect(() => {
+    if (!mapRef.current) return;
+    mapRef.current.jumpTo({ center: [city.center_lng, city.center_lat], zoom: city.default_zoom });
+  }, [city.slug]);
+
+  useEffect(() => {
     let cancelled = false;
 
     fetchHotspots(city.slug, day, turno).then((collection) => {

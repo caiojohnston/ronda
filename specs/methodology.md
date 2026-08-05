@@ -55,3 +55,27 @@ A API retorna `roubo_probability` e `furto_probability` separados. O frontend (`
 | Marambaia | Marambaia | 1.0 |
 
 **Quando trocar por dado real:** se/quando LAI ou CODEC devolverem dado por logradouro (ver [data-sources.md](data-sources.md)), o certo é substituir tanto as coordenadas quanto os pesos por contagens reais, e trocar a fórmula de `base_weight` heurístico por uma contagem observada normalizada. A estrutura de `incident_patterns` já comporta isso sem mudar schema.
+
+## Rio de Janeiro: sem eixo temporal
+
+Fonte da verdade: `db/seed-rio.js`. Segunda cidade do produto (adicionada 2026-08-05), e o inverso exato de Belém em termos de qual eixo é real vs. estimado:
+
+| Eixo | Belém | Rio de Janeiro |
+|---|---|---|
+| Local (peso por ponto) | Heurística (fluxo público, achado de reportagem) | **Real** — contagem oficial de BOs por delegacia (ISP-RJ, 2025) |
+| Turno/dia da semana | **Real** — agregado SEGUP-PA | Não existe na fonte — índice fixo |
+| Tipo de crime (roubo/furto) | Real, mas participação **global** do Pará aplicada a todo hotspot | **Real e local** — proporção observada naquela delegacia específica |
+
+Fórmula (sem os fatores de dia/turno, que Belém tem e RJ não):
+
+```
+relative = (total_roubos_2025 + total_furtos_2025) / max_volume_entre_as_41_delegacias
+probability(roubo) = clamp(relative × (roubo / (roubo + furto)), 0.03, 0.97)
+probability(furto) = clamp(relative × (furto / (roubo + furto)), 0.03, 0.97)
+```
+
+`probability(roubo) + probability(furto) = relative` — a "intensidade total" do ponto é sempre a fração do volume da delegacia mais movimentada do Rio, dividida na proporção real observada ali entre roubo e furto.
+
+**Decisão de produto (não técnica):** em vez de reusar `TURNO_SHARE`/`DAY_SHARE` do Pará como proxy pro Rio — o que inventaria uma variação horária que não foi observada localmente —, o índice do RJ fica constante entre dias/turnos. Isso é sinalizado em `cities.has_temporal_data = false`, propagado pela API (`meta.temporal_data` / `HotspotDetail.temporal_data`) e pela UI: seletor de dia/turno fica desabilitado e um aviso âmbar explica o motivo (`TimeControl.tsx`, `HotspotDetail.tsx`). Decidido em conversa com o usuário em 2026-08-05 depois de inspecionar o CSV real e confirmar a ausência da coluna — ver alternativas descartadas (reusar curva nacional, reusar curva de Belém rotulada) no histórico da conversa.
+
+Coordenadas: sede oficial de cada uma das 41 delegacias distritais (categoria "Capital") do município do Rio de Janeiro, ver [data-sources.md](data-sources.md).

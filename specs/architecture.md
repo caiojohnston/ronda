@@ -17,7 +17,8 @@ novoprojeto/
 ├── db/
 │   ├── schema.sql       # DDL: cities, hotspots, incident_patterns
 │   ├── migrate.js       # roda schema.sql contra DATABASE_URL
-│   └── seed.js          # popula Belém — fórmula do índice de risco mora aqui
+│   ├── seed.js          # popula Belém — fórmula do índice de risco mora aqui
+│   └── seed-rio.js      # popula Rio de Janeiro — dado real ISP-RJ, sem eixo temporal
 ├── apps/
 │   ├── api/
 │   │   └── src/
@@ -44,7 +45,7 @@ novoprojeto/
 ## Modelo de dados
 
 ```sql
-cities (id, slug, name, state, center_lat, center_lng, default_zoom)
+cities (id, slug, name, state, center_lat, center_lng, default_zoom, has_temporal_data)
 hotspots (id, city_id, name, neighborhood, lat, lng, base_weight)
 incident_patterns (id, hotspot_id, day_of_week[0-6], turno[madrugada|manha|tarde|noite], crime_type[roubo|furto], probability[0-1])
 ```
@@ -55,4 +56,6 @@ incident_patterns (id, hotspot_id, day_of_week[0-6], turno[madrugada|manha|tarde
 
 - **Sem GeoJSON clustering nativo do MapLibre** — markers são elementos HTML (`maplibregl.Marker` com `element` custom), não uma layer de dados. Escolha deliberada: permite CSS puro pra animação de "pulso" sem lidar com `paint` expressions do MapLibre. Ver [environment-notes.md](environment-notes.md) sobre o bug de CSS que isso quase causou.
 - **`intensity` no frontend = `Math.max(roubo_probability, furto_probability)`** — tamanho/cor do marker reflete o pior caso, não a média. Decisão de produto (mostrar o risco mais alto relevante), documentar se mudar.
-- **Sem autenticação/admin ainda** — pesos de hotspot só mudam editando `db/seed.js` e rodando `npm run db:seed` de novo (idempotente: apaga e recria hotspots/patterns da cidade).
+- **Sem autenticação/admin ainda** — pesos de hotspot só mudam editando `db/seed.js`/`db/seed-rio.js` e rodando `npm run db:seed` de novo (idempotente: apaga e recria hotspots/patterns da cidade).
+- **`cities.has_temporal_data`** — liga/desliga o eixo dia/turno por cidade. Belém = true (SEGUP-PA tem o dado real); Rio de Janeiro = false (ISP-RJ só publica agregado mensal, sem turno/dia). Propaga API → frontend (`meta.temporal_data`, `HotspotDetail.temporal_data`) pra `TimeControl` desabilitar os seletores e `HotspotDetail` trocar o rótulo, em vez de fingir uma granularidade que a fonte não tem. Ver [methodology.md](methodology.md#rio-de-janeiro-sem-eixo-temporal).
+- **Seletor de cidade** (`TimeControl.tsx`, dropdown) só aparece quando há mais de uma cidade cadastrada — troca de cidade recentraliza o mapa (`MapView` faz `jumpTo` num efeito próprio, disparado por `city.slug`) e fecha o drawer de detalhe aberto.

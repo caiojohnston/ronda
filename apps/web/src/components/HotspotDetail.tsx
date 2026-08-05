@@ -36,7 +36,7 @@ export default function HotspotDetail({ hotspotId, day, turno, onClose }: Props)
             style={{ borderColor: riskColor(detail.intensity), background: `${riskColor(detail.intensity)}1a` }}
           >
             <p className="text-xs text-slate-300">
-              {DAY_LABELS[detail.day]} · {TURNO_LABELS[detail.turno]}
+              {detail.temporal_data ? `${DAY_LABELS[detail.day]} · ${TURNO_LABELS[detail.turno]}` : "Índice anual (2025) · sem variação por dia/turno"}
             </p>
             <p className="text-2xl font-bold" style={{ color: riskColor(detail.intensity) }}>
               Risco {riskLabel(detail.intensity)}

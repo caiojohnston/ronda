@@ -4,6 +4,22 @@ Levantamento feito em 2026-08-04/05. Status pode mudar — revalidar antes de as
 
 ## Funcionando, usado no v0
 
+### ISP-RJ — BaseDPEvolucaoMensalCisp.csv (camada Rio de Janeiro, 2026-08-05)
+
+- Download direto, sem login: `www.ispdados.rj.gov.br/Arquivos/BaseDPEvolucaoMensalCisp.csv` (6.9MB, baixado e inspecionado linha a linha nesta sessão — não é resumo de terceiros)
+- Granularidade: **mensal por delegacia (CISP)**, desde 01/2003 até meses de 2026. Colunas confirmadas por leitura direta do header: `cisp;mes;ano;...;total_roubos;...;total_furtos;...`
+- **Não tem turno nem dia da semana** — só `mes`/`ano`. Isso é uma limitação real da fonte, não do produto: diferente da SEGUP-PA, o ISP-RJ nunca publicou esse corte. Ver decisão em [methodology.md](methodology.md#rio-de-janeiro-sem-eixo-temporal).
+- Usado no v0: soma de `total_roubos`/`total_furtos` do ano-calendário 2025 completo (12 meses), filtrado `munic == "Rio de Janeiro"` (41 CISPs distintas em 2025) — embutido em `db/seed-rio.js`.
+- **Ressalva de subnotificação:** contagem depende de BO registrado; áreas de forte presença de facção/milícia tendem a ter menos BOs por desconfiança no sistema formal, não porque sejam mais seguras. Observado no dado real: 11ª DP (Rocinha) aparece com apenas 8 roubos/136 furtos em 2025 — ordem de grandeza muito abaixo de delegacias vizinhas de perfil socioeconômico parecido. Não corrigimos isso (não há como, sem outra fonte) — é uma limitação conhecida de dado de BO em qualquer país, documentada aqui pra não ser lida como "Rocinha é a área mais segura do Rio".
+
+### Coordenadas das delegacias (camada Rio de Janeiro)
+
+- Fonte: camada oficial **"Delegacias de Polícia Civil do Estado do Rio de Janeiro"**, publicada por PCERJ, republicada pelo Núcleo de Ciência de Dados do MPRJ (coleta jul/2025)
+- Acesso: ArcGIS MapServer público, sem chave — `geo.mprj.mp.br/arcgis/rest/services/Seguranca_Publica/Delegacias_de_Polícia_Civil_do_Estado_do_Rio_de_Janeiro/MapServer/0/query`
+- Campos usados: `cisp` (chave de junção com o CSV do ISP-RJ acima), `delegacia`, `municipio`, `categoria`, `latitude`, `longitude`
+- Filtro aplicado: `municipio = 'Rio de Janeiro'` AND `categoria = 'Capital'` (exclui unidades especializadas — DEAM, Polícia Técnica, Homicídios etc. — que têm jurisdição sobreposta e poluiriam o mapa de delegacias distritais) → 41 registros, batendo exatamente com as 41 CISPs do CSV de crime em 2025
+- **Coordenada real da sede da delegacia, não do endereço de cada ocorrência** — mesma limitação de granularidade espacial que Belém tem (ponto único representando uma área), só que aqui a fronteira é a jurisdição oficial da CISP, não um heurístico nosso
+
 ### SEGUP-PA — Portal da Transparência (Power BI)
 
 - Portal: `sistemas.segup.pa.gov.br/transparencia/` → menu → Estatísticas → Dashboard
@@ -18,16 +34,6 @@ Números capturados (Pará, agregado, todos os municípios):
 - Turno: manhã 32.03%, tarde 29.89%, noite 27.32%, madrugada 10.76%
 - Dia da semana: seg 15.5%, sex 14.63%, qua 14.54%, ter 14.36%, qui 14.13%, dom 13.75%, sáb 13.03%
 - Crime: roubo 53.85%, furto 46.15% (Belém: roubo 661.765 / furto 567.071)
-
-## Confirmado funcionando, não usado ainda
-
-### ISP-RJ (Instituto de Segurança Pública do Rio de Janeiro)
-
-- `ispdados.rj.gov.br` — CSVs de download direto, sem login
-- `BaseMunicipioMensal.csv` (2.3MB, por município, desde 2014)
-- `BaseDPEvolucaoMensalCisp.csv` (6.6MB, **por delegacia**, desde 2003)
-- Colunas incluem `roubo_transeunte`, `roubo_celular`, `furto_veiculos`, `total_roubos`, `total_furtos`, `latrocinio`, `hom_doloso`
-- **Padrão-ouro brasileiro de dados abertos de segurança** — caminho mais rápido pra adicionar uma cidade nova (RJ)
 
 ## Fora do ar durante o levantamento (revalidar)
 

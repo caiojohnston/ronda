@@ -16,11 +16,11 @@ Documentação completa de decisões, dados e roadmap: **[`specs/`](specs/README
 
 ## Funcionalidades (v0)
 
-- Mapa de Belém com 20 hotspots reais (Ver-o-Peso, Jurunas, Guamá, Comércio, etc.)
-- Índice de risco por local, reativo a dia da semana + turno, com modo "Agora" (automático) e simulação manual
+- Duas cidades: **Belém** (20 hotspots, peso heurístico + turno/dia real da SEGUP-PA) e **Rio de Janeiro** (41 delegacias distritais, contagem oficial real do ISP-RJ por local, sem eixo temporal — a fonte não publica turno/dia). Seletor de cidade no painel.
+- Índice de risco por local; em Belém reativo a dia da semana + turno (modo "Agora" automático ou simulação manual); no Rio, fixo (a UI avisa e desabilita os seletores em vez de fingir uma granularidade que não existe)
 - Pontos piscando com tamanho/cor proporcional à intensidade de risco
-- Drill-down por clique: probabilidade de roubo/furto separadas + nota de metodologia
-- Fórmula 100% baseada em agregados reais da SEGUP-PA (não são números inventados)
+- Drill-down por clique: probabilidade de roubo/furto separadas + nota de metodologia específica da cidade
+- Fórmula 100% baseada em agregados reais (SEGUP-PA pra Belém, ISP-RJ pro Rio — nunca números inventados)
 
 ## Rodando local
 
@@ -34,7 +34,7 @@ npm install
 # psql -U postgres -c "CREATE DATABASE ronda OWNER ronda;"
 
 npm run db:migrate       # cria schema
-npm run db:seed          # popula Belém com hotspots + padrões
+npm run db:seed          # popula Belém + Rio de Janeiro
 
 cp apps/api/.env.example apps/api/.env
 cp apps/web/.env.example apps/web/.env
@@ -47,9 +47,11 @@ npm run dev:web           # http://localhost:5173
 
 ## Metodologia (resumo)
 
-Índice de risco por ponto = peso heurístico do local (fluxo público/densidade comercial) × participação real do turno × participação real do dia da semana × participação real do tipo de crime (roubo/furto).
+**Belém:** índice = peso heurístico do local (fluxo público/densidade comercial) × participação real do turno × participação real do dia da semana × participação real do tipo de crime. Turno/dia vêm de agregados reais do **Portal da Transparência da SEGUP-PA**; o peso por hotspot é estimativa (ainda não há dado oficial por endereço).
 
-Turno e dia da semana vêm de agregados reais do **Portal da Transparência da SEGUP-PA** (dashboard Power BI). O peso por hotspot é uma estimativa heurística — ainda não temos dado oficial por endereço/logradouro. Detalhes e fórmula exata: [`specs/methodology.md`](specs/methodology.md) e `db/seed.js`.
+**Rio de Janeiro:** índice = volume real de BOs da delegacia (roubo+furto, 2025) relativo à mais movimentada do Rio × proporção real roubo/furto observada naquela delegacia. Sem fator de turno/dia — o **ISP-RJ** não publica esse corte, então em vez de inventar uma curva o índice fica fixo, e a UI avisa disso explicitamente.
+
+Detalhes e fórmula exata: [`specs/methodology.md`](specs/methodology.md), `db/seed.js` (Belém) e `db/seed-rio.js` (Rio).
 
 ## Próximos passos
 

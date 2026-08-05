@@ -8,6 +8,11 @@ CREATE TABLE IF NOT EXISTS cities (
   default_zoom INT NOT NULL DEFAULT 12
 );
 
+-- false quando a fonte de dado da cidade não tem granularidade de turno/dia-da-semana
+-- (caso do ISP-RJ, que só publica agregado mensal por delegacia) — controla se a UI
+-- oferece o seletor de dia/turno ou mostra risco fixo anual.
+ALTER TABLE cities ADD COLUMN IF NOT EXISTS has_temporal_data BOOLEAN NOT NULL DEFAULT true;
+
 CREATE TABLE IF NOT EXISTS hotspots (
   id SERIAL PRIMARY KEY,
   city_id INT NOT NULL REFERENCES cities(id) ON DELETE CASCADE,

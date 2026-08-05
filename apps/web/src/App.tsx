@@ -13,6 +13,7 @@ function turnoFromHour(hour: number): Turno {
 }
 
 export default function App() {
+  const [cities, setCities] = useState<City[]>([]);
   const [city, setCity] = useState<City | null>(null);
   const [day, setDay] = useState(() => new Date().getDay());
   const [turno, setTurno] = useState<Turno>(() => turnoFromHour(new Date().getHours()));
@@ -20,8 +21,22 @@ export default function App() {
   const [selectedHotspotId, setSelectedHotspotId] = useState<number | null>(null);
 
   useEffect(() => {
-    fetchCities().then((cities) => setCity(cities.find((c) => c.slug === "belem") ?? cities[0] ?? null));
+    fetchCities().then((list) => {
+      setCities(list);
+      setCity(list.find((c) => c.slug === "belem") ?? list[0] ?? null);
+    });
   }, []);
+
+  const onChangeCity = useCallback(
+    (slug: string) => {
+      const next = cities.find((c) => c.slug === slug);
+      if (next) {
+        setCity(next);
+        setSelectedHotspotId(null);
+      }
+    },
+    [cities]
+  );
 
   useEffect(() => {
     if (!autoMode) return;
@@ -45,9 +60,12 @@ export default function App() {
     <div className="relative h-full w-full overflow-hidden">
       <MapView city={city} day={day} turno={turno} onSelectHotspot={onSelectHotspot} />
       <TimeControl
+        cities={cities}
+        city={city}
         day={day}
         turno={turno}
         autoMode={autoMode}
+        onChangeCity={onChangeCity}
         onChangeDay={setDay}
         onChangeTurno={setTurno}
         onToggleAuto={() => setAutoMode((v) => !v)}

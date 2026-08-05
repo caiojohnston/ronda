@@ -7,6 +7,7 @@ export interface City {
   center_lat: number;
   center_lng: number;
   default_zoom: number;
+  has_temporal_data: boolean;
 }
 
 export interface HotspotProperties {
@@ -27,7 +28,7 @@ export interface HotspotFeature {
 export interface HotspotCollection {
   type: "FeatureCollection";
   features: HotspotFeature[];
-  meta: { city: string; day: number; turno: Turno; methodology: string };
+  meta: { city: string; day: number; turno: Turno; methodology: string; temporal_data: boolean };
 }
 
 export interface HotspotDetail extends HotspotProperties {
@@ -36,4 +37,5 @@ export interface HotspotDetail extends HotspotProperties {
   day: number;
   turno: Turno;
   methodology: string;
+  temporal_data: boolean;
 }

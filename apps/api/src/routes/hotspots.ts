@@ -2,8 +2,13 @@ import type { FastifyInstance } from "fastify";
 import { pool } from "../db.js";
 import { currentDayAndTurno, isValidDay, isValidTurno } from "../lib/turno.js";
 
-const METHODOLOGY =
-  "Índice estimado a partir de agregados reais da SEGUP-PA (turno e dia da semana) combinados a um peso heurístico por local (fluxo público, densidade comercial). Não representa ocorrência confirmada nem dado em tempo real — mostra onde e quando o risco histórico é maior.";
+const METHODOLOGY: Record<string, string> = {
+  belem:
+    "Índice estimado a partir de agregados reais da SEGUP-PA (turno e dia da semana) combinados a um peso heurístico por local (fluxo público, densidade comercial). Não representa ocorrência confirmada nem dado em tempo real — mostra onde e quando o risco histórico é maior.",
+  "rio-de-janeiro":
+    "Índice calculado a partir de registros oficiais do ISP-RJ por delegacia (CISP), ano 2025 — contagem real de roubos e furtos, sem estimativa de local. O ISP-RJ não publica granularidade por turno ou dia da semana: por isso, diferente de Belém, o índice do Rio não varia ao mudar dia/horário — mostra a intensidade relativa anual daquele ponto.",
+};
+const DEFAULT_METHODOLOGY = "Índice de risco histórico por local, baseado em agregados oficiais públicos.";
 
 function parseDayTurno(query: Record<string, unknown>) {
   const now = currentDayAndTurno();
@@ -26,14 +31,14 @@ export default async function hotspotsRoutes(app: FastifyInstance) {
     }
 
     const { rows } = await pool.query(
-      `SELECT h.id, h.name, h.neighborhood, h.lat, h.lng,
+      `SELECT h.id, h.name, h.neighborhood, h.lat, h.lng, c.has_temporal_data,
               MAX(CASE WHEN ip.crime_type = 'roubo' THEN ip.probability END) AS roubo_probability,
               MAX(CASE WHEN ip.crime_type = 'furto' THEN ip.probability END) AS furto_probability
          FROM hotspots h
          JOIN cities c ON c.id = h.city_id
          JOIN incident_patterns ip ON ip.hotspot_id = h.id AND ip.day_of_week = $2 AND ip.turno = $3
         WHERE c.slug = $1
-        GROUP BY h.id, h.name, h.neighborhood, h.lat, h.lng
+        GROUP BY h.id, h.name, h.neighborhood, h.lat, h.lng, c.has_temporal_data
         ORDER BY h.id`,
       [citySlug, day, turno]
     );
@@ -59,7 +64,13 @@ export default async function hotspotsRoutes(app: FastifyInstance) {
     return {
       type: "FeatureCollection",
       features,
-      meta: { city: citySlug, day, turno, methodology: METHODOLOGY },
+      meta: {
+        city: citySlug,
+        day,
+        turno,
+        methodology: METHODOLOGY[citySlug] ?? DEFAULT_METHODOLOGY,
+        temporal_data: rows[0]?.has_temporal_data ?? true,
+      },
     };
   });
 
@@ -74,13 +85,14 @@ export default async function hotspotsRoutes(app: FastifyInstance) {
     }
 
     const { rows } = await pool.query(
-      `SELECT h.id, h.name, h.neighborhood, h.lat, h.lng,
+      `SELECT h.id, h.name, h.neighborhood, h.lat, h.lng, c.slug AS city_slug, c.has_temporal_data,
               MAX(CASE WHEN ip.crime_type = 'roubo' THEN ip.probability END) AS roubo_probability,
               MAX(CASE WHEN ip.crime_type = 'furto' THEN ip.probability END) AS furto_probability
          FROM hotspots h
+         JOIN cities c ON c.id = h.city_id
          JOIN incident_patterns ip ON ip.hotspot_id = h.id AND ip.day_of_week = $2 AND ip.turno = $3
         WHERE h.id = $1
-        GROUP BY h.id, h.name, h.neighborhood, h.lat, h.lng`,
+        GROUP BY h.id, h.name, h.neighborhood, h.lat, h.lng, c.slug, c.has_temporal_data`,
       [id, day, turno]
     );
 
@@ -100,7 +112,8 @@ export default async function hotspotsRoutes(app: FastifyInstance) {
       intensity: Math.max(roubo, furto),
       roubo_probability: roubo,
       furto_probability: furto,
-      methodology: METHODOLOGY,
+      methodology: METHODOLOGY[r.city_slug] ?? DEFAULT_METHODOLOGY,
+      temporal_data: r.has_temporal_data,
     };
   });
 }

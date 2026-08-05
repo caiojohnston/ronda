@@ -7,7 +7,7 @@
     "dev:web": "npm run dev -w apps/web",
     "db:up": "docker compose up -d db",
     "db:migrate": "node db/migrate.js",
-    "db:seed": "node db/seed.js"
+    "db:seed": "node db/seed.js && node db/seed-rio.js"
   },
   "devDependencies": {
     "pg": "^8.13.1"
