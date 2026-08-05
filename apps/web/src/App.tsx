@@ -3,8 +3,9 @@ import MapView from "./components/MapView";
 import TimeControl from "./components/TimeControl";
 import HotspotDetail from "./components/HotspotDetail";
 import ArmedViolenceDetail from "./components/ArmedViolenceDetail";
+import CrimeOccurrenceDetail from "./components/CrimeOccurrenceDetail";
 import { fetchCities } from "./lib/api";
-import type { ArmedViolenceFeature, City, Turno } from "./types";
+import type { ArmedViolenceFeature, City, CrimeOccurrenceFilters, CrimeOccurrenceProperties, Turno } from "./types";
 
 function turnoFromHour(hour: number): Turno {
   if (hour < 6) return "madrugada";
@@ -23,6 +24,10 @@ export default function App() {
   const [showArmedViolence, setShowArmedViolence] = useState(false);
   const [armedViolenceCount, setArmedViolenceCount] = useState<number | null>(null);
   const [selectedViolenceEvent, setSelectedViolenceEvent] = useState<ArmedViolenceFeature | null>(null);
+  const [showOccurrences, setShowOccurrences] = useState(false);
+  const [occurrenceCount, setOccurrenceCount] = useState<number | null>(null);
+  const [selectedOccurrence, setSelectedOccurrence] = useState<CrimeOccurrenceProperties | null>(null);
+  const [occurrenceFilters, setOccurrenceFilters] = useState<CrimeOccurrenceFilters>({});
 
   useEffect(() => {
     fetchCities().then((list) => {
@@ -39,6 +44,9 @@ export default function App() {
         setSelectedHotspotId(null);
         setSelectedViolenceEvent(null);
         setArmedViolenceCount(null);
+        setSelectedOccurrence(null);
+        setOccurrenceCount(null);
+        setOccurrenceFilters({});
       }
     },
     [cities]
@@ -59,16 +67,34 @@ export default function App() {
   const onSelectHotspot = useCallback((id: number) => {
     setSelectedHotspotId(id);
     setSelectedViolenceEvent(null);
+    setSelectedOccurrence(null);
   }, []);
 
   const onSelectViolenceEvent = useCallback((event: ArmedViolenceFeature) => {
     setSelectedViolenceEvent(event);
     setSelectedHotspotId(null);
+    setSelectedOccurrence(null);
+  }, []);
+
+  const onSelectOccurrence = useCallback((occurrence: CrimeOccurrenceProperties) => {
+    setSelectedOccurrence(occurrence);
+    setSelectedHotspotId(null);
+    setSelectedViolenceEvent(null);
   }, []);
 
   const onToggleArmedViolence = useCallback(() => {
     setShowArmedViolence((v) => !v);
     setArmedViolenceCount(null);
+  }, []);
+
+  const onToggleOccurrences = useCallback(() => {
+    setShowOccurrences((v) => !v);
+    setOccurrenceCount(null);
+  }, []);
+
+  const onChangeOccurrenceFilters = useCallback((patch: Partial<CrimeOccurrenceFilters>) => {
+    setOccurrenceFilters((prev) => ({ ...prev, ...patch }));
+    setOccurrenceCount(null);
   }, []);
 
   if (!city) {
@@ -82,9 +108,13 @@ export default function App() {
         day={day}
         turno={turno}
         showArmedViolence={showArmedViolence}
+        showOccurrences={showOccurrences}
+        occurrenceFilters={occurrenceFilters}
         onSelectHotspot={onSelectHotspot}
         onSelectViolenceEvent={onSelectViolenceEvent}
         onArmedViolenceCount={setArmedViolenceCount}
+        onSelectOccurrence={onSelectOccurrence}
+        onOccurrenceCount={setOccurrenceCount}
       />
       <TimeControl
         cities={cities}
@@ -94,11 +124,16 @@ export default function App() {
         autoMode={autoMode}
         showArmedViolence={showArmedViolence}
         armedViolenceCount={armedViolenceCount}
+        showOccurrences={showOccurrences}
+        occurrenceCount={occurrenceCount}
+        occurrenceFilters={occurrenceFilters}
         onChangeCity={onChangeCity}
         onChangeDay={setDay}
         onChangeTurno={setTurno}
         onToggleAuto={() => setAutoMode((v) => !v)}
         onToggleArmedViolence={onToggleArmedViolence}
+        onToggleOccurrences={onToggleOccurrences}
+        onChangeOccurrenceFilters={onChangeOccurrenceFilters}
       />
       {selectedHotspotId !== null && (
         <HotspotDetail
@@ -110,6 +145,9 @@ export default function App() {
       )}
       {selectedViolenceEvent !== null && (
         <ArmedViolenceDetail event={selectedViolenceEvent} onClose={() => setSelectedViolenceEvent(null)} />
+      )}
+      {selectedOccurrence !== null && (
+        <CrimeOccurrenceDetail occurrence={selectedOccurrence} onClose={() => setSelectedOccurrence(null)} />
       )}
     </div>
   );

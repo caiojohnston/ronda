@@ -4,6 +4,16 @@ Levantamento feito em 2026-08-04/05. Status pode mudar — revalidar antes de as
 
 ## Funcionando, usado no v0
 
+### CODEC (SEGUP-PA) — ocorrências reais de Belém (camada principal desde 2026-08-05)
+
+CODEC voltou ao ar (estava fora do ar em 2026-08-04/05, ver seção de tentativas abaixo) — resolveu na prática a lacuna que o LAI ia atrás de resolver, antes mesmo de resposta formal. Exportação feita **manualmente pelo usuário** via `codec.segup.pa.gov.br` (sem API pública encontrada — é UI de filtro + export, não um endpoint), filtrado roubo+furto, período 01/01/2025 a 02/08/2026.
+
+- Dado bruto: 2 planilhas .xlsx (61.459 linhas somadas, exportadas em duas faixas de data pelo limite do export), colunas incluindo tipo de crime, bairro, data, dia da semana, hora exata, lat/lng e microdado de vítima/autor (idade, sexo, cor, escolaridade, estado civil — **não importado**, deliberadamente, pra não guardar microdado sensível num produto público)
+- Limpeza feita nesta sessão (script Python one-off, não commitado): deduplicação do dia de fronteira entre os dois exports (1.084 linhas duplicadas exatas — os dois arquivos se sobrepunham em 05/01/2026), remoção de 38 linhas com erro de geocodificação da própria fonte (coordenadas caindo em SP/RJ/outros estados — erro do CODEC, não nosso), turno derivado da hora (mesma convenção do resto do produto: madrugada/manhã/tarde/noite = blocos de 6h)
+- Resultado: **60.335 ocorrências limpas**, commitadas em `db/data/codec-belem-occurrences.csv` (4.1MB), 68 bairros reais distintos, furto 41.005 / roubo 19.330
+- Uso: fonte única tanto do índice de risco agregado por bairro (`db/seed.js`, substituiu a heurística de 20 landmarks — ver [methodology.md](methodology.md)) quanto da camada de pontos clusterizados no mapa (`db/import-crime-occurrences.js` → tabela `crime_occurrences`, endpoint `/api/crime-occurrences`)
+- **Reabre o item "revisitar CODEC" do roadmap como resolvido** — LAI/MPPA continuam válidos pra ampliar período histórico (o CODEC só foi filtrado 2025 em diante) ou como redundância caso o portal caia de novo.
+
 ### ISP-RJ — BaseDPEvolucaoMensalCisp.csv (camada Rio de Janeiro, 2026-08-05)
 
 - Download direto, sem login: `www.ispdados.rj.gov.br/Arquivos/BaseDPEvolucaoMensalCisp.csv` (6.9MB, baixado e inspecionado linha a linha nesta sessão — não é resumo de terceiros)
@@ -74,23 +84,18 @@ Achado em 2026-08-05 buscando alternativa pra dado street-level de Belém depois
 
 - Exige `DADOS_GOV_BR_API_KEY` que não estava configurada no mcp-brasil usado na pesquisa
 
-### CODEC (SEGUP-PA)
+### CODEC (SEGUP-PA) — RESOLVIDO em 2026-08-05
 
-- `codec.segup.pa.gov.br` — link "Exportar Dados" do portal de transparência aponta pra cá
-- Estava com **HTTP 500** em 2026-08-04; em 2026-08-05 o subdomínio inteiro (`sistemas.segup.pa.gov.br`) estava com `ECONNREFUSED` — não dá pra saber se é o mesmo problema piorando ou uma manutenção separada
-- **Provável caminho real pra dado em nível de logradouro/bairro** — vale revisitar periodicamente
+Estava com HTTP 500 (2026-08-04) e depois `ECONNREFUSED` no subdomínio inteiro (2026-08-05, mesmo dia, sessão anterior) — voltou ao ar ainda em 2026-08-05, usuário exportou manualmente. Ver seção "Funcionando, usado no v0" acima.
 
-## Não obtido — requer ação formal
+## Ampliação futura (opcional — não bloqueante)
 
-### Dado por endereço/logradouro em Belém
+### Período histórico maior que jan/2025 em Belém
 
-Não existe publicamente em bulk. Caminhos:
-1. CODEC voltar do ar (grátis, mas incerto)
-2. **LAI (Lei de Acesso à Informação)** junto à SEGUP-PA via `falabr.cgu.gov.br` — não protocolado ainda. Pedido sugerido:
-   > "Dados de boletins de ocorrência registrados no município de Belém, período 2020-2025, contendo: tipo de crime, logradouro, bairro, data e hora da ocorrência."
-   Prazo legal de resposta: 20 dias úteis.
-
-Até um desses caminhos se resolver, os 20 hotspots do v0 usam coordenadas de landmarks conhecidos (Ver-o-Peso, Comércio, Jurunas, etc.) com peso heurístico — **não é dado oficial por endereço**, isso está documentado na própria UI (nota de metodologia) e não deve ser apresentado como mais preciso do que é.
+CODEC resolveu o problema estrutural (dado por bairro/lat-lng existe e é acessível), mas o export atual só cobre jan/2025-ago/2026. Se quiser cobertura histórica maior (ex.: 2020-2024), os caminhos que já estavam em andamento continuam válidos como ampliação, não mais como bloqueio:
+1. Reexportar do CODEC com período maior, se o portal permitir
+2. **LAI (Lei de Acesso à Informação)** junto à SEGUP-PA via `falabr.cgu.gov.br` — texto pronto em conversa anterior, ainda não protocolado
+3. **MPPA/CAO Criminal** (`caocriminal@mppa.mp.br`) — canal paralelo, ainda não enviado
 
 ## Ferramenta usada na pesquisa
 

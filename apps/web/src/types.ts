@@ -61,3 +61,31 @@ export interface ArmedViolenceCollection {
   features: ArmedViolenceFeature[];
   meta: { city: string; window_days: number; methodology: string; source: string };
 }
+
+export interface CrimeOccurrenceProperties {
+  id: number;
+  crime_type: "roubo" | "furto";
+  bairro: string;
+  occurred_at: string;
+}
+
+export interface CrimeOccurrenceFeature {
+  type: "Feature";
+  geometry: { type: "Point"; coordinates: [number, number] };
+  properties: CrimeOccurrenceProperties;
+}
+
+export interface CrimeOccurrenceCollection {
+  type: "FeatureCollection";
+  features: CrimeOccurrenceFeature[];
+  meta: { city: string; count: number; methodology: string; source: string };
+}
+
+export interface CrimeOccurrenceFilters {
+  from?: string;
+  to?: string;
+  dayOfWeek?: number;
+  turno?: Turno;
+  crimeType?: "roubo" | "furto";
+  bairro?: string;
+}

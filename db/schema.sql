@@ -57,3 +57,24 @@ CREATE TABLE IF NOT EXISTS armed_violence_events (
 );
 
 CREATE INDEX IF NOT EXISTS armed_violence_events_city_idx ON armed_violence_events (city_id, occurred_at);
+
+-- Ocorrências individuais reais de roubo/furto, fonte: CODEC (codec.segup.pa.gov.br),
+-- exportação manual pelo usuário em 2026-08-05 (jan/2025 a ago/2026, já filtrado
+-- roubo+furto). Ponto bruto por ocorrência, usado na camada de clustering do mapa —
+-- separado de incident_patterns, que é o índice agregado (probabilidade), gerado a
+-- partir deste mesmo dado em db/seed.js. Sem microdado de vítima/autor: a fonte tem
+-- colunas de sexo/idade/cor/escolaridade, deliberadamente não importadas aqui.
+CREATE TABLE IF NOT EXISTS crime_occurrences (
+  id SERIAL PRIMARY KEY,
+  city_id INT NOT NULL REFERENCES cities(id) ON DELETE CASCADE,
+  crime_type TEXT NOT NULL CHECK (crime_type IN ('roubo','furto')),
+  bairro TEXT NOT NULL,
+  occurred_at TIMESTAMP NOT NULL,
+  day_of_week SMALLINT NOT NULL CHECK (day_of_week BETWEEN 0 AND 6),
+  turno TEXT NOT NULL CHECK (turno IN ('madrugada','manha','tarde','noite')),
+  lat DOUBLE PRECISION NOT NULL,
+  lng DOUBLE PRECISION NOT NULL,
+  source TEXT NOT NULL DEFAULT 'codec_segup_pa'
+);
+
+CREATE INDEX IF NOT EXISTS crime_occurrences_city_idx ON crime_occurrences (city_id);

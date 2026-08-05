@@ -1,5 +1,7 @@
+import { useEffect, useState } from "react";
 import { DAY_LABELS, TURNO_LABELS } from "../lib/risk";
-import type { City, Turno } from "../types";
+import { fetchCrimeOccurrenceBairros } from "../lib/api";
+import type { City, CrimeOccurrenceFilters, Turno } from "../types";
 
 interface Props {
   cities: City[];
@@ -9,11 +11,24 @@ interface Props {
   autoMode: boolean;
   showArmedViolence: boolean;
   armedViolenceCount: number | null;
+  showOccurrences: boolean;
+  occurrenceCount: number | null;
+  occurrenceFilters: CrimeOccurrenceFilters;
   onChangeCity: (slug: string) => void;
   onChangeDay: (day: number) => void;
   onChangeTurno: (turno: Turno) => void;
   onToggleAuto: () => void;
   onToggleArmedViolence: () => void;
+  onToggleOccurrences: () => void;
+  onChangeOccurrenceFilters: (patch: Partial<CrimeOccurrenceFilters>) => void;
+}
+
+function titleCase(s: string): string {
+  return s
+    .toLowerCase()
+    .split(" ")
+    .map((w) => (w.length <= 2 ? w : w[0].toUpperCase() + w.slice(1)))
+    .join(" ");
 }
 
 const TURNOS: Turno[] = ["madrugada", "manha", "tarde", "noite"];
@@ -26,14 +41,24 @@ export default function TimeControl({
   autoMode,
   showArmedViolence,
   armedViolenceCount,
+  showOccurrences,
+  occurrenceCount,
+  occurrenceFilters,
   onChangeCity,
   onChangeDay,
   onChangeTurno,
   onToggleAuto,
   onToggleArmedViolence,
+  onToggleOccurrences,
+  onChangeOccurrenceFilters,
 }: Props) {
   const hasTemporalData = city.has_temporal_data;
   const controlsDisabled = autoMode || !hasTemporalData;
+  const [bairros, setBairros] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetchCrimeOccurrenceBairros(city.slug).then((res) => setBairros(res.bairros));
+  }, [city.slug]);
 
   return (
     <div className="absolute top-4 left-4 z-10 w-80 rounded-xl bg-slate-900/90 backdrop-blur border border-slate-700 shadow-xl p-4 text-slate-100">
@@ -126,6 +151,99 @@ export default function TimeControl({
                 ? `Sem eventos registrados em ${city.name} nos últimos 6 meses (ou fonte ainda não cobre esta cidade).`
                 : `${armedViolenceCount} evento(s) nos últimos 6 meses. Fenômeno diferente do índice de roubo/furto acima — ocorrências específicas já registradas, não estimativa.`}
           </p>
+        )}
+      </div>
+
+      <div className="border-t border-slate-700 mt-3 pt-3">
+        <button
+          onClick={onToggleOccurrences}
+          className={`w-full flex items-center justify-between text-xs px-2 py-1.5 rounded border ${
+            showOccurrences
+              ? "bg-red-500/20 border-red-400 text-red-300"
+              : "bg-slate-800 border-slate-600 text-slate-300"
+          }`}
+        >
+          <span>● Ocorrências reais (CODEC)</span>
+          <span>{showOccurrences ? "ligado" : "desligado"}</span>
+        </button>
+        {showOccurrences && (
+          <>
+            <div className="grid grid-cols-2 gap-1.5 mt-2">
+              <select
+                value={occurrenceFilters.crimeType ?? ""}
+                onChange={(e) => onChangeOccurrenceFilters({ crimeType: (e.target.value || undefined) as "roubo" | "furto" | undefined })}
+                className="text-[11px] bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200"
+              >
+                <option value="">Qualquer tipo</option>
+                <option value="roubo">Roubo</option>
+                <option value="furto">Furto</option>
+              </select>
+
+              <select
+                value={occurrenceFilters.bairro ?? ""}
+                onChange={(e) => onChangeOccurrenceFilters({ bairro: e.target.value || undefined })}
+                className="text-[11px] bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200"
+              >
+                <option value="">Qualquer bairro</option>
+                {bairros.map((b) => (
+                  <option key={b} value={b}>
+                    {titleCase(b)}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={occurrenceFilters.dayOfWeek ?? ""}
+                onChange={(e) =>
+                  onChangeOccurrenceFilters({ dayOfWeek: e.target.value === "" ? undefined : Number(e.target.value) })
+                }
+                className="text-[11px] bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200"
+              >
+                <option value="">Qualquer dia</option>
+                {DAY_LABELS.map((label, idx) => (
+                  <option key={label} value={idx}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+
+              <select
+                value={occurrenceFilters.turno ?? ""}
+                onChange={(e) => onChangeOccurrenceFilters({ turno: (e.target.value || undefined) as Turno | undefined })}
+                className="text-[11px] bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200"
+              >
+                <option value="">Qualquer turno</option>
+                {TURNOS.map((t) => (
+                  <option key={t} value={t}>
+                    {TURNO_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+
+              <input
+                type="date"
+                value={occurrenceFilters.from ?? ""}
+                onChange={(e) => onChangeOccurrenceFilters({ from: e.target.value || undefined })}
+                className="text-[11px] bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200"
+                title="De"
+              />
+              <input
+                type="date"
+                value={occurrenceFilters.to ?? ""}
+                onChange={(e) => onChangeOccurrenceFilters({ to: e.target.value || undefined })}
+                className="text-[11px] bg-slate-800 border border-slate-600 rounded px-1.5 py-1 text-slate-200"
+                title="Até"
+              />
+            </div>
+
+            <p className="text-[11px] text-slate-400 mt-2 leading-snug">
+              {occurrenceCount === null
+                ? "Carregando…"
+                : occurrenceCount === 0
+                  ? "Nenhuma ocorrência bate com esse filtro."
+                  : `${occurrenceCount} ocorrência(s) real(is) de roubo/furto (agrupadas em clusters — dá zoom pra desagrupar).`}
+            </p>
+          </>
         )}
       </div>
     </div>

@@ -1,8 +1,15 @@
 import { useEffect, useRef } from "react";
 import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { ArmedViolenceFeature, City, HotspotFeature, Turno } from "../types";
-import { fetchArmedViolence, fetchHotspots } from "../lib/api";
+import type {
+  ArmedViolenceFeature,
+  City,
+  CrimeOccurrenceFilters,
+  CrimeOccurrenceProperties,
+  HotspotFeature,
+  Turno,
+} from "../types";
+import { fetchArmedViolence, fetchCrimeOccurrences, fetchHotspots } from "../lib/api";
 import { markerSize, pulseDuration, riskColor } from "../lib/risk";
 
 interface Props {
@@ -10,36 +17,131 @@ interface Props {
   day: number;
   turno: Turno;
   showArmedViolence: boolean;
+  showOccurrences: boolean;
+  occurrenceFilters: CrimeOccurrenceFilters;
   onSelectHotspot: (id: number) => void;
   onSelectViolenceEvent: (event: ArmedViolenceFeature) => void;
   onArmedViolenceCount: (count: number) => void;
+  onSelectOccurrence: (occurrence: CrimeOccurrenceProperties) => void;
+  onOccurrenceCount: (count: number) => void;
 }
 
 const TILE_STYLE = "https://tiles.openfreemap.org/styles/positron";
+
+const OCC_SOURCE = "occurrences";
+const OCC_CLUSTER_LAYER = "occurrences-clusters";
+const OCC_CLUSTER_COUNT_LAYER = "occurrences-cluster-count";
+const OCC_POINT_LAYER = "occurrences-unclustered-point";
+const EMPTY_FC: GeoJSON.FeatureCollection = { type: "FeatureCollection", features: [] };
 
 export default function MapView({
   city,
   day,
   turno,
   showArmedViolence,
+  showOccurrences,
+  occurrenceFilters,
   onSelectHotspot,
   onSelectViolenceEvent,
   onArmedViolenceCount,
+  onSelectOccurrence,
+  onOccurrenceCount,
 }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const markersRef = useRef<maplibregl.Marker[]>([]);
   const violenceMarkersRef = useRef<maplibregl.Marker[]>([]);
+  const occLayerReadyRef = useRef(false);
+  const pendingOccDataRef = useRef<GeoJSON.FeatureCollection | null>(null);
+  const onSelectOccurrenceRef = useRef(onSelectOccurrence);
+  onSelectOccurrenceRef.current = onSelectOccurrence;
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
-    mapRef.current = new maplibregl.Map({
+    const map = new maplibregl.Map({
       container: containerRef.current,
       style: TILE_STYLE,
       center: [city.center_lng, city.center_lat],
       zoom: city.default_zoom,
     });
-    mapRef.current.addControl(new maplibregl.NavigationControl(), "top-right");
+    map.addControl(new maplibregl.NavigationControl(), "top-right");
+    mapRef.current = map;
+
+    map.on("load", () => {
+      map.addSource(OCC_SOURCE, {
+        type: "geojson",
+        data: EMPTY_FC,
+        cluster: true,
+        clusterMaxZoom: 15,
+        clusterRadius: 50,
+      });
+
+      map.addLayer({
+        id: OCC_CLUSTER_LAYER,
+        type: "circle",
+        source: OCC_SOURCE,
+        filter: ["has", "point_count"],
+        paint: {
+          "circle-color": ["step", ["get", "point_count"], "#fca5a5", 25, "#f87171", 100, "#ef4444", 500, "#b91c1c"],
+          "circle-radius": ["step", ["get", "point_count"], 14, 25, 18, 100, 24, 500, 30],
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "#1e293b",
+          "circle-opacity": 0.85,
+        },
+      });
+
+      map.addLayer({
+        id: OCC_CLUSTER_COUNT_LAYER,
+        type: "symbol",
+        source: OCC_SOURCE,
+        filter: ["has", "point_count"],
+        layout: {
+          "text-field": ["get", "point_count_abbreviated"],
+          "text-size": 12,
+        },
+        paint: { "text-color": "#1e293b" },
+      });
+
+      map.addLayer({
+        id: OCC_POINT_LAYER,
+        type: "circle",
+        source: OCC_SOURCE,
+        filter: ["!", ["has", "point_count"]],
+        paint: {
+          "circle-color": ["match", ["get", "crime_type"], "roubo", "#dc2626", "furto", "#f97316", "#dc2626"],
+          "circle-radius": 5,
+          "circle-stroke-width": 1,
+          "circle-stroke-color": "#1e293b",
+        },
+      });
+
+      map.on("click", OCC_CLUSTER_LAYER, (e) => {
+        const features = map.queryRenderedFeatures(e.point, { layers: [OCC_CLUSTER_LAYER] });
+        const feature = features[0];
+        const clusterId = feature?.properties?.cluster_id;
+        if (clusterId === undefined) return;
+        const source = map.getSource(OCC_SOURCE) as maplibregl.GeoJSONSource;
+        source.getClusterExpansionZoom(clusterId).then((zoom) => {
+          map.easeTo({ center: (feature.geometry as GeoJSON.Point).coordinates as [number, number], zoom });
+        });
+      });
+
+      map.on("click", OCC_POINT_LAYER, (e) => {
+        const feature = e.features?.[0];
+        if (!feature) return;
+        onSelectOccurrenceRef.current(feature.properties as unknown as CrimeOccurrenceProperties);
+      });
+
+      for (const layer of [OCC_CLUSTER_LAYER, OCC_POINT_LAYER]) {
+        map.on("mouseenter", layer, () => (map.getCanvas().style.cursor = "pointer"));
+        map.on("mouseleave", layer, () => (map.getCanvas().style.cursor = ""));
+      }
+
+      occLayerReadyRef.current = true;
+      if (pendingOccDataRef.current) {
+        (map.getSource(OCC_SOURCE) as maplibregl.GeoJSONSource).setData(pendingOccDataRef.current);
+      }
+    });
   }, [city]);
 
   useEffect(() => {
@@ -106,6 +208,35 @@ export default function MapView({
       cancelled = true;
     };
   }, [city, showArmedViolence, onSelectViolenceEvent, onArmedViolenceCount]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    function applyData(data: GeoJSON.FeatureCollection) {
+      const map = mapRef.current;
+      if (!map) return;
+      if (occLayerReadyRef.current) {
+        (map.getSource(OCC_SOURCE) as maplibregl.GeoJSONSource).setData(data);
+      } else {
+        pendingOccDataRef.current = data;
+      }
+    }
+
+    if (!showOccurrences) {
+      applyData(EMPTY_FC);
+      return;
+    }
+
+    fetchCrimeOccurrences(city.slug, occurrenceFilters).then((collection) => {
+      if (cancelled) return;
+      onOccurrenceCount(collection.features.length);
+      applyData(collection as unknown as GeoJSON.FeatureCollection);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [city, showOccurrences, occurrenceFilters, onOccurrenceCount]);
 
   return <div ref={containerRef} className="absolute inset-0" />;
 }

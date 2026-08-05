@@ -15,10 +15,13 @@
 ```
 novoprojeto/
 ├── db/
-│   ├── schema.sql       # DDL: cities, hotspots, incident_patterns
+│   ├── schema.sql       # DDL: cities, hotspots, incident_patterns, armed_violence_events, crime_occurrences
 │   ├── migrate.js       # roda schema.sql contra DATABASE_URL
-│   ├── seed.js          # popula Belém — fórmula do índice de risco mora aqui
+│   ├── data/
+│   │   └── codec-belem-occurrences.csv  # 60.335 ocorrências reais (CODEC/SEGUP-PA), commitado, sem PII
+│   ├── seed.js          # popula Belém a partir do CSV real — índice agregado por bairro
 │   ├── seed-rio.js      # popula Rio de Janeiro — dado real ISP-RJ, sem eixo temporal
+│   ├── import-crime-occurrences.js  # carrega o mesmo CSV, sem agregar, pra camada de clustering
 │   └── fetch-fogo-cruzado.js  # sincroniza armed_violence_events via API do Fogo Cruzado
 ├── apps/
 │   ├── api/
@@ -27,17 +30,19 @@ novoprojeto/
 │   │       ├── db.ts              # pool pg
 │   │       ├── lib/turno.ts       # helpers dia/turno (turno a partir da hora)
 │   │       └── routes/
-│   │           ├── cities.ts          # GET /api/cities
-│   │           ├── hotspots.ts        # GET /api/hotspots, GET /api/hotspots/:id
-│   │           └── armed-violence.ts  # GET /api/armed-violence
+│   │           ├── cities.ts              # GET /api/cities
+│   │           ├── hotspots.ts            # GET /api/hotspots, GET /api/hotspots/:id
+│   │           ├── armed-violence.ts      # GET /api/armed-violence
+│   │           └── crime-occurrences.ts   # GET /api/crime-occurrences
 │   └── web/
 │       └── src/
-│           ├── App.tsx                    # estado global: city, day, turno, autoMode, camada de violência armada
+│           ├── App.tsx                    # estado global: city, day, turno, autoMode, camadas opt-in
 │           ├── components/
-│           │   ├── MapView.tsx              # MapLibre + markers HTML animados (risco + violência armada)
-│           │   ├── TimeControl.tsx          # painel dia/turno/toggle Agora/toggle violência armada
+│           │   ├── MapView.tsx              # MapLibre: markers HTML (risco + violência armada) + GeoJSON clustering (ocorrências)
+│           │   ├── TimeControl.tsx          # painel dia/turno/toggle Agora/toggles de camada
 │           │   ├── HotspotDetail.tsx        # drawer de drill-down do índice de risco
-│           │   └── ArmedViolenceDetail.tsx  # drawer de detalhe de evento de violência armada
+│           │   ├── ArmedViolenceDetail.tsx  # drawer de detalhe de evento de violência armada
+│           │   └── CrimeOccurrenceDetail.tsx # drawer de detalhe de ocorrência individual (CODEC)
 │           └── lib/
 │               ├── api.ts                 # fetch wrappers
 │               └── risk.ts                # cor/tamanho/label por intensidade
@@ -53,13 +58,14 @@ cities (id, slug, name, state, center_lat, center_lng, default_zoom, has_tempora
 hotspots (id, city_id, name, neighborhood, lat, lng, base_weight)
 incident_patterns (id, hotspot_id, day_of_week[0-6], turno[madrugada|manha|tarde|noite], crime_type[roubo|furto], probability[0-1])
 armed_violence_events (id, city_id, external_id, occurred_at, lat, lng, neighborhood, address, main_reason, victim_count, death_count, source)
+crime_occurrences (id, city_id, crime_type[roubo|furto], bairro, occurred_at, day_of_week[0-6], turno, lat, lng, source)
 ```
 
 `day_of_week` segue `Date.getDay()` do JS: 0=domingo...6=sábado (escolha deliberada pra casar com `new Date().getDay()` no frontend sem tradução).
 
 ## Decisões que vale lembrar
 
-- **Sem GeoJSON clustering nativo do MapLibre** — markers são elementos HTML (`maplibregl.Marker` com `element` custom), não uma layer de dados. Escolha deliberada: permite CSS puro pra animação de "pulso" sem lidar com `paint` expressions do MapLibre. Ver [environment-notes.md](environment-notes.md) sobre o bug de CSS que isso quase causou.
+- **Hotspots e violência armada usam markers HTML** (`maplibregl.Marker` com `element` custom), não layer de dados — permite CSS puro pra animação de "pulso" sem `paint` expressions. Ver [environment-notes.md](environment-notes.md) sobre o bug de CSS que isso quase causou. **Ocorrências (CODEC) é a exceção**, desde 2026-08-05: 60k pontos não cabem em DOM markers, então usa GeoJSON source com `cluster: true` nativo do MapLibre — círculos WebGL, não HTML. As duas abordagens coexistem no mesmo mapa (`MapView.tsx`); a consequência é que markers HTML sempre renderizam por cima da camada WebGL, ver [methodology.md](methodology.md#ocorrências-reais-clusterizadas-codec).
 - **`intensity` no frontend = `Math.max(roubo_probability, furto_probability)`** — tamanho/cor do marker reflete o pior caso, não a média. Decisão de produto (mostrar o risco mais alto relevante), documentar se mudar.
 - **Sem autenticação/admin ainda** — pesos de hotspot só mudam editando `db/seed.js`/`db/seed-rio.js` e rodando `npm run db:seed` de novo (idempotente: apaga e recria hotspots/patterns da cidade).
 - **`cities.has_temporal_data`** — liga/desliga o eixo dia/turno por cidade. Belém = true (SEGUP-PA tem o dado real); Rio de Janeiro = false (ISP-RJ só publica agregado mensal, sem turno/dia). Propaga API → frontend (`meta.temporal_data`, `HotspotDetail.temporal_data`) pra `TimeControl` desabilitar os seletores e `HotspotDetail` trocar o rótulo, em vez de fingir uma granularidade que a fonte não tem. Ver [methodology.md](methodology.md#rio-de-janeiro-sem-eixo-temporal).

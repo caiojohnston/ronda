@@ -4,7 +4,7 @@ import { currentDayAndTurno, isValidDay, isValidTurno } from "../lib/turno.js";
 
 const METHODOLOGY: Record<string, string> = {
   belem:
-    "Índice estimado a partir de agregados reais da SEGUP-PA (turno e dia da semana) combinados a um peso heurístico por local (fluxo público, densidade comercial). Não representa ocorrência confirmada nem dado em tempo real — mostra onde e quando o risco histórico é maior.",
+    "Índice calculado a partir de ocorrências reais de roubo/furto por bairro (CODEC/SEGUP-PA, jan/2025-ago/2026) — contagem oficial, não heurística. Cada bairro tem sua própria distribuição real de dia da semana e turno. Não representa ocorrência confirmada nem dado em tempo real — mostra onde e quando o risco histórico é maior. Bairros com poucas ocorrências no período têm distribuição temporal mais sujeita a ruído estatístico.",
   "rio-de-janeiro":
     "Índice calculado a partir de registros oficiais do ISP-RJ por delegacia (CISP), ano 2025 — contagem real de roubos e furtos, sem estimativa de local. O ISP-RJ não publica granularidade por turno ou dia da semana: por isso, diferente de Belém, o índice do Rio não varia ao mudar dia/horário — mostra a intensidade relativa anual daquele ponto.",
 };

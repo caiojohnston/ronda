@@ -16,11 +16,12 @@ Documentação completa de decisões, dados e roadmap: **[`specs/`](specs/README
 
 ## Funcionalidades (v0)
 
-- Duas cidades: **Belém** (20 hotspots, peso heurístico + turno/dia real da SEGUP-PA) e **Rio de Janeiro** (41 delegacias distritais, contagem oficial real do ISP-RJ por local, sem eixo temporal — a fonte não publica turno/dia). Seletor de cidade no painel.
+- Duas cidades: **Belém** (68 bairros reais, contagem oficial CODEC/SEGUP-PA por bairro + turno/dia real, cada um com sua própria distribuição) e **Rio de Janeiro** (41 delegacias distritais, contagem oficial real do ISP-RJ por local, sem eixo temporal — a fonte não publica turno/dia). Seletor de cidade no painel.
 - Índice de risco por local; em Belém reativo a dia da semana + turno (modo "Agora" automático ou simulação manual); no Rio, fixo (a UI avisa e desabilita os seletores em vez de fingir uma granularidade que não existe)
 - Pontos piscando com tamanho/cor proporcional à intensidade de risco
 - Drill-down por clique: probabilidade de roubo/furto separadas + nota de metodologia específica da cidade
-- Fórmula 100% baseada em agregados reais (SEGUP-PA pra Belém, ISP-RJ pro Rio — nunca números inventados)
+- Fórmula 100% baseada em agregados reais (CODEC/SEGUP-PA pra Belém, ISP-RJ pro Rio — nunca números inventados)
+- Camada opcional de **ocorrências reais** (Belém): 60.335 registros individuais de roubo/furto (CODEC/SEGUP-PA, jan/2025-ago/2026), clusterizados no mapa — desagrupa com zoom, clique num ponto mostra a ocorrência específica
 - Camada opcional de **violência armada** (Belém): 839 tiroteios reais desde nov/2023, dado do Instituto Fogo Cruzado, mostrados como eventos pontuais — fenômeno diferente de roubo/furto, camada separada, desligada por padrão
 
 ## Rodando local
@@ -52,7 +53,7 @@ npm run db:fetch-armed-violence
 
 ## Metodologia (resumo)
 
-**Belém:** índice = peso heurístico do local (fluxo público/densidade comercial) × participação real do turno × participação real do dia da semana × participação real do tipo de crime. Turno/dia vêm de agregados reais do **Portal da Transparência da SEGUP-PA**; o peso por hotspot é estimativa (ainda não há dado oficial por endereço).
+**Belém:** índice = volume real de ocorrências do bairro (relativo ao bairro mais movimentado) × participação real do turno × participação real do dia da semana × participação real do tipo de crime — tudo calculado a partir da distribuição própria daquele bairro específico, vinda de 60.335 ocorrências reais exportadas do **CODEC/SEGUP-PA**.
 
 **Rio de Janeiro:** índice = volume real de BOs da delegacia (roubo+furto, 2025) relativo à mais movimentada do Rio × proporção real roubo/furto observada naquela delegacia. Sem fator de turno/dia — o **ISP-RJ** não publica esse corte, então em vez de inventar uma curva o índice fica fixo, e a UI avisa disso explicitamente.
 
