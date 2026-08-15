@@ -10,7 +10,7 @@ import type {
   Turno,
 } from "../types";
 import { fetchArmedViolence, fetchCrimeOccurrences, fetchHotspots } from "../lib/api";
-import { markerSize, pulseDuration, riskColor } from "../lib/risk";
+import { markerSize, riskColor } from "../lib/risk";
 
 interface Props {
   city: City;
@@ -82,11 +82,11 @@ export default function MapView({
         source: OCC_SOURCE,
         filter: ["has", "point_count"],
         paint: {
-          "circle-color": ["step", ["get", "point_count"], "#fca5a5", 25, "#f87171", 100, "#ef4444", 500, "#b91c1c"],
+          "circle-color": ["step", ["get", "point_count"], "#f1c40f", 25, "#e67e22", 100, "#e74c3c", 500, "#c0392b"],
           "circle-radius": ["step", ["get", "point_count"], 14, 25, 18, 100, 24, 500, 30],
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "#1e293b",
-          "circle-opacity": 0.85,
+          "circle-stroke-width": 2,
+          "circle-stroke-color": "#ffffff",
+          "circle-opacity": 0.9,
         },
       });
 
@@ -99,7 +99,7 @@ export default function MapView({
           "text-field": ["get", "point_count_abbreviated"],
           "text-size": 12,
         },
-        paint: { "text-color": "#1e293b" },
+        paint: { "text-color": "#2c3e50" },
       });
 
       map.addLayer({
@@ -108,10 +108,10 @@ export default function MapView({
         source: OCC_SOURCE,
         filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-color": ["match", ["get", "crime_type"], "roubo", "#dc2626", "furto", "#f97316", "#dc2626"],
+          "circle-color": ["match", ["get", "crime_type"], "roubo", "#e74c3c", "furto", "#e67e22", "#e74c3c"],
           "circle-radius": 5,
           "circle-stroke-width": 1,
-          "circle-stroke-color": "#1e293b",
+          "circle-stroke-color": "#ffffff",
         },
       });
 
@@ -166,8 +166,7 @@ export default function MapView({
         el.style.width = `${size}px`;
         el.style.height = `${size}px`;
         el.innerHTML = `
-          <span class="ring" style="background:${color};animation-duration:${pulseDuration(intensity)}s"></span>
-          <span class="core" style="width:${size * 0.55}px;height:${size * 0.55}px;background:${color}"></span>
+          <span class="core" style="width:${size}px;height:${size}px;background:${color}"></span>
         `;
         el.addEventListener("click", () => onSelectHotspot(id));
 

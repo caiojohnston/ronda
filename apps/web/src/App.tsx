@@ -98,7 +98,7 @@ export default function App() {
   }, []);
 
   if (!city) {
-    return <div className="h-full w-full flex items-center justify-center text-slate-400">Carregando Ronda…</div>;
+    return <div className="h-full w-full flex items-center justify-center text-[#7f8c8d]">Carregando Ronda…</div>;
   }
 
   return (

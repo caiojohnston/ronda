@@ -8,10 +8,10 @@ export const TURNO_LABELS: Record<string, string> = {
 };
 
 export function riskColor(intensity: number): string {
-  if (intensity < 0.25) return "#22c55e";
-  if (intensity < 0.5) return "#eab308";
-  if (intensity < 0.75) return "#f97316";
-  return "#ef4444";
+  if (intensity < 0.25) return "#2ecc71";
+  if (intensity < 0.5) return "#f1c40f";
+  if (intensity < 0.75) return "#e67e22";
+  return "#e74c3c";
 }
 
 export function riskLabel(intensity: number): string {
@@ -23,8 +23,4 @@ export function riskLabel(intensity: number): string {
 
 export function markerSize(intensity: number): number {
   return 14 + intensity * 28;
-}
-
-export function pulseDuration(intensity: number): number {
-  return 2.6 - intensity * 1.6;
 }

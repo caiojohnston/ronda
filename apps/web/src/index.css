@@ -5,26 +5,12 @@
 html, body, #root {
   height: 100%;
   margin: 0;
+  font-family: "Open Sans", Helvetica, Arial, sans-serif;
 }
 
 .maplibregl-map {
   width: 100%;
   height: 100%;
-}
-
-@keyframes ronda-pulse {
-  0% {
-    transform: scale(0.8);
-    opacity: 0.75;
-  }
-  70% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
 }
 
 .hotspot-marker {
@@ -34,29 +20,21 @@ html, body, #root {
   cursor: pointer;
 }
 
-.hotspot-marker .ring {
-  position: absolute;
-  inset: 0;
-  border-radius: 9999px;
-  animation-name: ronda-pulse;
-  animation-timing-function: ease-out;
-  animation-iteration-count: infinite;
-}
-
 .hotspot-marker .core {
   position: relative;
   border-radius: 9999px;
-  box-shadow: 0 0 8px rgba(0, 0, 0, 0.5);
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 }
 
 /* Camada de violência armada: visual deliberadamente diferente dos pontos de risco
-   (sem pulso, formato de losango) — são eventos pontuais já ocorridos, não estimativa. */
+   (formato de losango) — são eventos pontuais já ocorridos, não estimativa. */
 .violence-marker {
   width: 14px;
   height: 14px;
   transform: rotate(45deg);
-  background: #f59e0b;
-  border: 2px solid #fef3c7;
-  box-shadow: 0 0 6px rgba(0, 0, 0, 0.6);
+  background: #e67e22;
+  border: 2px solid #ffffff;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
   cursor: pointer;
 }
