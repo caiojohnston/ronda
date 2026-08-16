@@ -1,17 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
 import MapView from "./components/MapView";
 import TimeControl from "./components/TimeControl";
+import MapLegend from "./components/MapLegend";
 import HotspotDetail from "./components/HotspotDetail";
 import ArmedViolenceDetail from "./components/ArmedViolenceDetail";
 import CrimeOccurrenceDetail from "./components/CrimeOccurrenceDetail";
 import { fetchCities } from "./lib/api";
 import type { ArmedViolenceFeature, City, CrimeOccurrenceFilters, CrimeOccurrenceProperties, Turno } from "./types";
 
+type Theme = "light" | "dark";
+
 function turnoFromHour(hour: number): Turno {
   if (hour < 6) return "madrugada";
   if (hour < 12) return "manha";
   if (hour < 18) return "tarde";
   return "noite";
+}
+
+function initialTheme(): Theme {
+  const saved = localStorage.getItem("ronda-theme");
+  if (saved === "light" || saved === "dark") return saved;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
 export default function App() {
@@ -28,6 +37,12 @@ export default function App() {
   const [occurrenceCount, setOccurrenceCount] = useState<number | null>(null);
   const [selectedOccurrence, setSelectedOccurrence] = useState<CrimeOccurrenceProperties | null>(null);
   const [occurrenceFilters, setOccurrenceFilters] = useState<CrimeOccurrenceFilters>({});
+  const [theme, setTheme] = useState<Theme>(initialTheme);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem("ronda-theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     fetchCities().then((list) => {
@@ -98,7 +113,11 @@ export default function App() {
   }, []);
 
   if (!city) {
-    return <div className="h-full w-full flex items-center justify-center text-[#7f8c8d]">Carregando Ronda…</div>;
+    return (
+      <div className="h-full w-full flex items-center justify-center text-[var(--text-secondary)]">
+        Carregando Ronda…
+      </div>
+    );
   }
 
   return (
@@ -107,15 +126,25 @@ export default function App() {
         city={city}
         day={day}
         turno={turno}
+        theme={theme}
         showArmedViolence={showArmedViolence}
         showOccurrences={showOccurrences}
         occurrenceFilters={occurrenceFilters}
+        selectedHotspotId={selectedHotspotId}
         onSelectHotspot={onSelectHotspot}
         onSelectViolenceEvent={onSelectViolenceEvent}
         onArmedViolenceCount={setArmedViolenceCount}
         onSelectOccurrence={onSelectOccurrence}
         onOccurrenceCount={setOccurrenceCount}
       />
+      <MapLegend />
+      <button
+        onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
+        title={theme === "light" ? "Tema escuro" : "Tema claro"}
+        className="absolute bottom-4 right-4 z-10 bg-[var(--surface)] border border-[var(--border)] shadow-sm rounded w-9 h-9 flex items-center justify-center text-[var(--text-primary)]"
+      >
+        {theme === "light" ? "☾" : "☀"}
+      </button>
       <TimeControl
         cities={cities}
         city={city}

@@ -7,18 +7,19 @@ export const TURNO_LABELS: Record<string, string> = {
   noite: "Noite · 18h–24h",
 };
 
+export const RISK_LEVELS: { max: number; color: string; label: string }[] = [
+  { max: 0.25, color: "#2ecc71", label: "Baixo" },
+  { max: 0.5, color: "#f1c40f", label: "Moderado" },
+  { max: 0.75, color: "#e67e22", label: "Alto" },
+  { max: Infinity, color: "#e74c3c", label: "Crítico" },
+];
+
 export function riskColor(intensity: number): string {
-  if (intensity < 0.25) return "#2ecc71";
-  if (intensity < 0.5) return "#f1c40f";
-  if (intensity < 0.75) return "#e67e22";
-  return "#e74c3c";
+  return (RISK_LEVELS.find((l) => intensity < l.max) ?? RISK_LEVELS[RISK_LEVELS.length - 1]).color;
 }
 
 export function riskLabel(intensity: number): string {
-  if (intensity < 0.25) return "Baixo";
-  if (intensity < 0.5) return "Moderado";
-  if (intensity < 0.75) return "Alto";
-  return "Crítico";
+  return (RISK_LEVELS.find((l) => intensity < l.max) ?? RISK_LEVELS[RISK_LEVELS.length - 1]).label;
 }
 
 export function markerSize(intensity: number): number {

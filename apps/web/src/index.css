@@ -2,10 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --surface: #ffffff;
+  --surface-alt: #ecf0f1;
+  --text-primary: #2c3e50;
+  --text-secondary: #7f8c8d;
+  --border: #bdc3c7;
+  --page-bg: #ecf0f1;
+  --accent: #2980b9;
+}
+
+html.dark {
+  color-scheme: dark;
+  --surface: #2c3e50;
+  --surface-alt: #22303c;
+  --text-primary: #ecf0f1;
+  --text-secondary: #95a5a6;
+  --border: #4a5f70;
+  --page-bg: #1c2833;
+  --accent: #2980b9;
+}
+
 html, body, #root {
   height: 100%;
   margin: 0;
   font-family: "Open Sans", Helvetica, Arial, sans-serif;
+  background: var(--page-bg);
 }
 
 .maplibregl-map {
@@ -25,6 +47,16 @@ html, body, #root {
   border-radius: 9999px;
   border: 2px solid #ffffff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  transition: transform 0.15s ease, background-color 0.3s ease, width 0.3s ease, height 0.3s ease;
+}
+
+.hotspot-marker:hover .core {
+  transform: scale(1.18);
+}
+
+.hotspot-marker .core.selected {
+  outline: 3px solid var(--text-primary);
+  outline-offset: 2px;
 }
 
 /* Camada de violência armada: visual deliberadamente diferente dos pontos de risco
@@ -37,4 +69,9 @@ html, body, #root {
   border: 2px solid #ffffff;
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
   cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.violence-marker:hover {
+  transform: rotate(45deg) scale(1.18);
 }

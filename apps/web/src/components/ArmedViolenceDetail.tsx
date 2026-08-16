@@ -14,34 +14,34 @@ export default function ArmedViolenceDetail({ event, onClose }: Props) {
   });
 
   return (
-    <div className="absolute top-0 right-0 z-10 h-full w-full max-w-sm bg-white border-l border-[#bdc3c7] text-[#2c3e50] p-5 overflow-y-auto">
-      <button onClick={onClose} className="text-[#7f8c8d] hover:text-[#2c3e50] text-sm mb-4">
+    <div className="absolute top-0 right-0 z-10 h-full w-full max-w-sm bg-[var(--surface)] border-l border-[var(--border)] text-[var(--text-primary)] p-5 overflow-y-auto">
+      <button onClick={onClose} className="text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-sm mb-4">
         ✕ Fechar
       </button>
 
       <p className="text-xs uppercase tracking-wide text-[#e67e22] font-semibold mb-1">Violência armada</p>
       <h2 className="text-xl font-bold">{p.neighborhood ?? "Bairro não informado"}</h2>
-      <p className="text-[#7f8c8d] text-sm mb-4">{date}</p>
+      <p className="text-[var(--text-secondary)] text-sm mb-4">{date}</p>
 
-      <div className="rounded p-3 mb-4 border-l-4 border-[#e67e22] bg-[#ecf0f1]">
-        <p className="text-xs text-[#7f8c8d] mb-1">Motivo registrado</p>
+      <div className="rounded p-3 mb-4 border-l-4 border-[#e67e22] bg-[var(--surface-alt)]">
+        <p className="text-xs text-[var(--text-secondary)] mb-1">Motivo registrado</p>
         <p className="text-base font-semibold text-[#e67e22]">{p.main_reason ?? "Não informado"}</p>
       </div>
 
       <div className="grid grid-cols-2 gap-2 mb-4">
-        <div className="rounded bg-[#ecf0f1] p-3">
-          <p className="text-[11px] text-[#7f8c8d]">Vítimas</p>
+        <div className="rounded bg-[var(--surface-alt)] p-3">
+          <p className="text-[11px] text-[var(--text-secondary)]">Vítimas</p>
           <p className="text-lg font-bold">{p.victim_count}</p>
         </div>
-        <div className="rounded bg-[#ecf0f1] p-3">
-          <p className="text-[11px] text-[#7f8c8d]">Mortes</p>
+        <div className="rounded bg-[var(--surface-alt)] p-3">
+          <p className="text-[11px] text-[var(--text-secondary)]">Mortes</p>
           <p className="text-lg font-bold">{p.death_count}</p>
         </div>
       </div>
 
-      {p.address && <p className="text-xs text-[#7f8c8d] mb-4 leading-relaxed">{p.address}</p>}
+      {p.address && <p className="text-xs text-[var(--text-secondary)] mb-4 leading-relaxed">{p.address}</p>}
 
-      <p className="text-xs text-[#7f8c8d] leading-relaxed border-t border-[#bdc3c7] pt-3">
+      <p className="text-xs text-[var(--text-secondary)] leading-relaxed border-t border-[var(--border)] pt-3">
         Ocorrência específica já registrada — não é estimativa de risco, e não é o mesmo fenômeno que o
         índice de roubo/furto (aqui é tiroteio/violência armada). Fonte:{" "}
         <a

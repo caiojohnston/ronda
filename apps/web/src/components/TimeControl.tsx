@@ -55,31 +55,56 @@ export default function TimeControl({
   const hasTemporalData = city.has_temporal_data;
   const controlsDisabled = autoMode || !hasTemporalData;
   const [bairros, setBairros] = useState<string[]>([]);
+  const [open, setOpen] = useState(() => localStorage.getItem("ronda-sidebar-open") !== "false");
 
   useEffect(() => {
     fetchCrimeOccurrenceBairros(city.slug).then((res) => setBairros(res.bairros));
   }, [city.slug]);
 
+  useEffect(() => {
+    localStorage.setItem("ronda-sidebar-open", String(open));
+  }, [open]);
+
+  if (!open) {
+    return (
+      <button
+        onClick={() => setOpen(true)}
+        className="absolute top-4 left-4 z-10 bg-[var(--surface)] border border-[var(--border)] shadow-sm rounded px-3 py-2 text-[var(--text-primary)] text-sm font-semibold"
+      >
+        ☰ Ronda
+      </button>
+    );
+  }
+
   return (
-    <div className="absolute top-4 left-4 z-10 w-80 rounded bg-white border border-[#bdc3c7] shadow-sm p-4 text-[#2c3e50]">
+    <div className="absolute top-4 left-4 z-10 w-80 rounded bg-[var(--surface)] border border-[var(--border)] shadow-sm p-4 text-[var(--text-primary)]">
       <div className="flex items-center justify-between mb-3">
         <h1 className="font-bold text-lg tracking-tight">Ronda</h1>
-        <button
-          onClick={onToggleAuto}
-          disabled={!hasTemporalData}
-          className={`text-xs px-2 py-1 rounded border disabled:opacity-40 ${
-            autoMode ? "bg-[#2980b9] border-[#2980b9] text-white" : "bg-[#ecf0f1] border-[#bdc3c7] text-[#7f8c8d]"
-          }`}
-        >
-          {autoMode ? "● Agora" : "Simulando"}
-        </button>
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={onToggleAuto}
+            disabled={!hasTemporalData}
+            className={`text-xs px-2 py-1 rounded border disabled:opacity-40 ${
+              autoMode ? "bg-[var(--accent)] border-[var(--accent)] text-white" : "bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-secondary)]"
+            }`}
+          >
+            {autoMode ? "● Agora" : "Simulando"}
+          </button>
+          <button
+            onClick={() => setOpen(false)}
+            title="Esconder painel"
+            className="text-xs px-2 py-1 rounded border bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-secondary)]"
+          >
+            ✕
+          </button>
+        </div>
       </div>
 
       {cities.length > 1 && (
         <select
           value={city.slug}
           onChange={(e) => onChangeCity(e.target.value)}
-          className="w-full mb-3 text-xs bg-white border border-[#bdc3c7] rounded px-2 py-1.5 text-[#2c3e50]"
+          className="w-full mb-3 text-xs bg-[var(--surface)] border border-[var(--border)] rounded px-2 py-1.5 text-[var(--text-primary)]"
         >
           {cities.map((c) => (
             <option key={c.slug} value={c.slug}>
@@ -97,7 +122,7 @@ export default function TimeControl({
             disabled={controlsDisabled}
             title={label}
             className={`text-[10px] py-1 rounded ${
-              day === idx ? "bg-[#2980b9] text-white" : "bg-[#ecf0f1] text-[#7f8c8d]"
+              day === idx ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-alt)] text-[var(--text-secondary)]"
             } disabled:opacity-40`}
           >
             {label.slice(0, 3)}
@@ -112,7 +137,7 @@ export default function TimeControl({
             onClick={() => onChangeTurno(t)}
             disabled={controlsDisabled}
             className={`text-xs py-1.5 rounded ${
-              turno === t ? "bg-[#2980b9] text-white" : "bg-[#ecf0f1] text-[#7f8c8d]"
+              turno === t ? "bg-[var(--accent)] text-white" : "bg-[var(--surface-alt)] text-[var(--text-secondary)]"
             } disabled:opacity-40`}
           >
             {TURNO_LABELS[t].split(" · ")[0]}
@@ -121,7 +146,7 @@ export default function TimeControl({
       </div>
 
       {hasTemporalData ? (
-        <p className="text-[11px] text-[#7f8c8d] mt-3 leading-snug">
+        <p className="text-[11px] text-[var(--text-secondary)] mt-3 leading-snug">
           Índice de risco histórico por local — não é ocorrência em tempo real.
         </p>
       ) : (
@@ -131,20 +156,20 @@ export default function TimeControl({
         </p>
       )}
 
-      <div className="border-t border-[#bdc3c7] mt-3 pt-3">
+      <div className="border-t border-[var(--border)] mt-3 pt-3">
         <button
           onClick={onToggleArmedViolence}
           className={`w-full flex items-center justify-between text-xs px-2 py-1.5 rounded border ${
             showArmedViolence
               ? "bg-[#e67e22] border-[#e67e22] text-white"
-              : "bg-[#ecf0f1] border-[#bdc3c7] text-[#7f8c8d]"
+              : "bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-secondary)]"
           }`}
         >
           <span>◆ Violência armada (Fogo Cruzado)</span>
           <span>{showArmedViolence ? "ligado" : "desligado"}</span>
         </button>
         {showArmedViolence && (
-          <p className="text-[11px] text-[#7f8c8d] mt-2 leading-snug">
+          <p className="text-[11px] text-[var(--text-secondary)] mt-2 leading-snug">
             {armedViolenceCount === null
               ? "Carregando…"
               : armedViolenceCount === 0
@@ -154,13 +179,13 @@ export default function TimeControl({
         )}
       </div>
 
-      <div className="border-t border-[#bdc3c7] mt-3 pt-3">
+      <div className="border-t border-[var(--border)] mt-3 pt-3">
         <button
           onClick={onToggleOccurrences}
           className={`w-full flex items-center justify-between text-xs px-2 py-1.5 rounded border ${
             showOccurrences
               ? "bg-[#e74c3c] border-[#e74c3c] text-white"
-              : "bg-[#ecf0f1] border-[#bdc3c7] text-[#7f8c8d]"
+              : "bg-[var(--surface-alt)] border-[var(--border)] text-[var(--text-secondary)]"
           }`}
         >
           <span>● Ocorrências reais (CODEC)</span>
@@ -172,7 +197,7 @@ export default function TimeControl({
               <select
                 value={occurrenceFilters.crimeType ?? ""}
                 onChange={(e) => onChangeOccurrenceFilters({ crimeType: (e.target.value || undefined) as "roubo" | "furto" | undefined })}
-                className="text-[11px] bg-white border border-[#bdc3c7] rounded px-1.5 py-1 text-[#2c3e50]"
+                className="text-[11px] bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-[var(--text-primary)]"
               >
                 <option value="">Qualquer tipo</option>
                 <option value="roubo">Roubo</option>
@@ -182,7 +207,7 @@ export default function TimeControl({
               <select
                 value={occurrenceFilters.bairro ?? ""}
                 onChange={(e) => onChangeOccurrenceFilters({ bairro: e.target.value || undefined })}
-                className="text-[11px] bg-white border border-[#bdc3c7] rounded px-1.5 py-1 text-[#2c3e50]"
+                className="text-[11px] bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-[var(--text-primary)]"
               >
                 <option value="">Qualquer bairro</option>
                 {bairros.map((b) => (
@@ -197,7 +222,7 @@ export default function TimeControl({
                 onChange={(e) =>
                   onChangeOccurrenceFilters({ dayOfWeek: e.target.value === "" ? undefined : Number(e.target.value) })
                 }
-                className="text-[11px] bg-white border border-[#bdc3c7] rounded px-1.5 py-1 text-[#2c3e50]"
+                className="text-[11px] bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-[var(--text-primary)]"
               >
                 <option value="">Qualquer dia</option>
                 {DAY_LABELS.map((label, idx) => (
@@ -210,7 +235,7 @@ export default function TimeControl({
               <select
                 value={occurrenceFilters.turno ?? ""}
                 onChange={(e) => onChangeOccurrenceFilters({ turno: (e.target.value || undefined) as Turno | undefined })}
-                className="text-[11px] bg-white border border-[#bdc3c7] rounded px-1.5 py-1 text-[#2c3e50]"
+                className="text-[11px] bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-[var(--text-primary)]"
               >
                 <option value="">Qualquer turno</option>
                 {TURNOS.map((t) => (
@@ -224,19 +249,19 @@ export default function TimeControl({
                 type="date"
                 value={occurrenceFilters.from ?? ""}
                 onChange={(e) => onChangeOccurrenceFilters({ from: e.target.value || undefined })}
-                className="text-[11px] bg-white border border-[#bdc3c7] rounded px-1.5 py-1 text-[#2c3e50]"
+                className="text-[11px] bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-[var(--text-primary)]"
                 title="De"
               />
               <input
                 type="date"
                 value={occurrenceFilters.to ?? ""}
                 onChange={(e) => onChangeOccurrenceFilters({ to: e.target.value || undefined })}
-                className="text-[11px] bg-white border border-[#bdc3c7] rounded px-1.5 py-1 text-[#2c3e50]"
+                className="text-[11px] bg-[var(--surface)] border border-[var(--border)] rounded px-1.5 py-1 text-[var(--text-primary)]"
                 title="Até"
               />
             </div>
 
-            <p className="text-[11px] text-[#7f8c8d] mt-2 leading-snug">
+            <p className="text-[11px] text-[var(--text-secondary)] mt-2 leading-snug">
               {occurrenceCount === null
                 ? "Carregando…"
                 : occurrenceCount === 0
