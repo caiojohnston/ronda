@@ -188,6 +188,11 @@ export default function MapView({
     }
 
     map.on("load", () => setupOccurrenceLayers(map));
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
   }, [city]);
 
   useEffect(() => {
